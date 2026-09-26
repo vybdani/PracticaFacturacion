@@ -1,0 +1,40 @@
+package ni.edu.uam.sistemafacturacion;
+
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+
+public class App extends Application{
+    @Override
+    public void start(Stage stage) throws IOException {
+
+        FXMLLoader fxmlLoader = new FXMLLoader(
+                App.class.getResource(
+                        "/ni/edu/uam/sistemafacturacion/view/main-view.fxml"
+                )
+        );
+
+        Scene scene = new Scene(
+                fxmlLoader.load(),
+                1000,
+                650
+        );
+
+        stage.setTitle("Sistema de Facturación");
+
+        stage.setScene(scene);
+
+        stage.setMinWidth(800);
+        stage.setMinHeight(500);
+
+        stage.show();
+    }
+
+    public static void main(String[] args) {
+
+        launch(args);
+    }
+}

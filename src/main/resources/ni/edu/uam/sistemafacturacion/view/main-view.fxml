@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ni.edu.uam.sistemafacturacion.controller.MainController">
+
+    <top>
+
+        <VBox spacing="5">
+
+            <padding>
+                <Insets top="25"
+                        right="25"
+                        bottom="20"
+                        left="25"/>
+            </padding>
+
+            <Label text="Sistema de Facturación"
+                   style="-fx-font-size: 28px;
+                          -fx-font-weight: bold;"/>
+
+            <Label text="Aplicación de escritorio - JavaFX + PostgreSQL"/>
+
+        </VBox>
+
+    </top>
+
+
+    <center>
+
+        <GridPane hgap="15"
+                  vgap="15"
+                  alignment="CENTER">
+
+            <Button fx:id="btnCategorias"
+                    text="Categorías"
+                    prefWidth="180"
+                    prefHeight="60"
+                    onAction="#abrirCategorias"
+                    GridPane.columnIndex="0"
+                    GridPane.rowIndex="0"/>
+
+            <Button text="Productos"
+                    prefWidth="180"
+                    prefHeight="60"
+                    disable="true"
+                    GridPane.columnIndex="1"
+                    GridPane.rowIndex="0"/>
+
+            <Button text="Clientes"
+                    prefWidth="180"
+                    prefHeight="60"
+                    disable="true"
+                    GridPane.columnIndex="0"
+                    GridPane.rowIndex="1"/>
+
+            <Button text="Facturación"
+                    prefWidth="180"
+                    prefHeight="60"
+                    disable="true"
+                    GridPane.columnIndex="1"
+                    GridPane.rowIndex="1"/>
+
+        </GridPane>
+
+    </center>
+
+
+    <bottom>
+
+        <VBox alignment="CENTER"
+              spacing="10">
+
+            <padding>
+                <Insets top="15"
+                        right="20"
+                        bottom="20"
+                        left="20"/>
+            </padding>
+
+            <Button fx:id="btnSalir"
+                    text="Salir"
+                    prefWidth="120"
+                    onAction="#salir"/>
+
+            <Label text="Java 21 | JavaFX 21 | PostgreSQL | JDBC"/>
+
+        </VBox>
+
+    </bottom>
+
+</BorderPane>

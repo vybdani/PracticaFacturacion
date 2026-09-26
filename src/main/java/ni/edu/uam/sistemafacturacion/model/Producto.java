@@ -1,0 +1,22 @@
+package ni.edu.uam.sistemafacturacion.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class Producto {
+
+    private Integer id;
+    private String codigo;
+    private String nombre;
+    private Categoria categoria;
+    private BigDecimal precioVenta;
+    private int existencia;
+    private boolean activo;
+}
+

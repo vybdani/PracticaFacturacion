@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ni.edu.uam.sistemafacturacion.controller.CategoriaController">
+
+    <top>
+        <VBox spacing="5">
+            <padding>
+                <Insets top="20" right="20" bottom="15" left="20"/>
+            </padding>
+
+            <Label text="Gestión de Categorías"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+            <Label text="Administración de las categorías de productos"/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="15">
+            <padding>
+                <Insets top="10" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <!-- FORMULARIO -->
+            <GridPane hgap="10" vgap="10">
+
+                <Label text="ID:"
+                       GridPane.columnIndex="0"
+                       GridPane.rowIndex="0"/>
+
+                <TextField fx:id="txtId"
+                           editable="false"
+                           promptText="Generado automáticamente"
+                           GridPane.columnIndex="1"
+                           GridPane.rowIndex="0"/>
+
+                <Label text="Nombre:"
+                       GridPane.columnIndex="0"
+                       GridPane.rowIndex="1"/>
+
+                <TextField fx:id="txtNombre"
+                           promptText="Ingrese el nombre de la categoría"
+                           GridPane.columnIndex="1"
+                           GridPane.rowIndex="1"/>
+
+                <Label text="Estado:"
+                       GridPane.columnIndex="0"
+                       GridPane.rowIndex="2"/>
+
+                <CheckBox fx:id="chkActiva"
+                          text="Categoría activa"
+                          selected="true"
+                          GridPane.columnIndex="1"
+                          GridPane.rowIndex="2"/>
+
+            </GridPane>
+
+            <!-- BOTONES -->
+            <HBox spacing="10">
+
+                <Button fx:id="btnNuevo"
+                        text="Nuevo"
+                        onAction="#nuevo"/>
+
+                <Button fx:id="btnGuardar"
+                        text="Guardar"
+                        onAction="#guardar"/>
+
+                <Button fx:id="btnActualizar"
+                        text="Actualizar"
+                        onAction="#actualizar"/>
+
+                <Button fx:id="btnEliminar"
+                        text="Eliminar"
+                        onAction="#eliminar"/>
+
+            </HBox>
+
+            <!-- TABLA -->
+            <TableView fx:id="tblCategorias"
+                       VBox.vgrow="ALWAYS">
+
+                <columns>
+
+                    <TableColumn fx:id="colId"
+                                 text="ID"
+                                 prefWidth="80"/>
+
+                    <TableColumn fx:id="colNombre"
+                                 text="Nombre"
+                                 prefWidth="300"/>
+
+                    <TableColumn fx:id="colActiva"
+                                 text="Activa"
+                                 prefWidth="120"/>
+
+                </columns>
+
+                <placeholder>
+                    <Label text="No existen categorías registradas"/>
+                </placeholder>
+
+            </TableView>
+
+        </VBox>
+    </center>
+
+</BorderPane>
