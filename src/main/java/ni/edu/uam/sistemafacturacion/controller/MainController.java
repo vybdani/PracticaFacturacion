@@ -35,25 +35,61 @@ public class MainController {
     @FXML
     private void abrirCategorias() {
 
+        abrirVentana(
+                "/ni/edu/uam/sistemafacturacion/view/categoria-view.fxml",
+                "Gestión de Categorías",
+                850,
+                600
+        );
+    }
+
+
+    /**
+     * Abre la ventana de productos.
+     */
+    @FXML
+    private void abrirProductos() {
+
+        abrirVentana(
+                "/ni/edu/uam/sistemafacturacion/view/producto-view.fxml",
+                "Gestión de Productos",
+                1050,
+                760
+        );
+    }
+
+
+    /**
+     * Abre una vista FXML en una ventana modal
+     * que depende de la ventana principal.
+     */
+    private void abrirVentana(
+            String rutaFxml,
+            String titulo,
+            double ancho,
+            double alto) {
+
         try {
 
             FXMLLoader loader = new FXMLLoader(
-                    App.class.getResource(
-                            "/ni/edu/uam/sistemafacturacion/view/categoria-view.fxml"
-                    )
+                    App.class.getResource(rutaFxml)
             );
 
             Scene scene = new Scene(
                     loader.load(),
-                    850,
-                    600
+                    ancho,
+                    alto
+            );
+
+            scene.getStylesheets().add(
+                    App.class.getResource(
+                            "/ni/edu/uam/sistemafacturacion/css/theme.css"
+                    ).toExternalForm()
             );
 
             Stage stage = new Stage();
 
-            stage.setTitle(
-                    "Gestión de Categorías"
-            );
+            stage.setTitle(titulo);
 
             stage.setScene(scene);
 
@@ -62,7 +98,7 @@ public class MainController {
 
             /*
              * Impide trabajar con la ventana principal
-             * mientras la ventana de categorías esté abierta.
+             * mientras la ventana secundaria esté abierta.
              */
             stage.initModality(
                     Modality.WINDOW_MODAL
@@ -84,7 +120,7 @@ public class MainController {
         } catch (IOException e) {
 
             mostrarError(
-                    "Error al abrir categorías",
+                    "Error al abrir " + titulo,
                     e.getMessage()
             );
         }

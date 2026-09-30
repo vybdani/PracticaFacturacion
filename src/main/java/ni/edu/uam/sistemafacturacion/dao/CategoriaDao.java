@@ -25,7 +25,7 @@ public class CategoriaDao {
                 categorias.add(categoria);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error al listar categorías: " + e.getMessage(), e);
         }
         return categorias;
     }
@@ -41,7 +41,7 @@ public class CategoriaDao {
             statement.setBoolean(2, categoria.isActiva());
             statement.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error al guardar la categoría: " + e.getMessage(), e);
         }
     }
 
@@ -54,7 +54,7 @@ public class CategoriaDao {
             statement.setInt(1, id);
             statement.executeUpdate();
         }catch(SQLException e){
-            e.printStackTrace();
+            throw new RuntimeException("Error al eliminar la categoría: " + e.getMessage(), e);
         }
     }
 
@@ -69,7 +69,7 @@ public class CategoriaDao {
             statement.setInt(3, categoria.getId());
             statement.executeUpdate();
         }catch(SQLException e){
-            e.printStackTrace();
+            throw new RuntimeException("Error al actualizar la categoría: " + e.getMessage(), e);
         }
     }
 

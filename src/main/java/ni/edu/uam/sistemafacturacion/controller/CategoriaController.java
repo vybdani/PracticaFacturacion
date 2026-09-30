@@ -14,6 +14,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import ni.edu.uam.sistemafacturacion.model.Categoria;
 import ni.edu.uam.sistemafacturacion.service.CategoriaService;
+import ni.edu.uam.sistemafacturacion.service.ProductoService;
 
 import java.util.Optional;
 
@@ -57,11 +58,15 @@ public class CategoriaController {
     // SERVICE
     private CategoriaService categoriaService;
 
+    private ProductoService productoService;
+
     // INICIALIZACIÓN
     @FXML
     public void initialize() {
 
         categoriaService = new CategoriaService();
+
+        productoService = new ProductoService();
 
         configurarColumnas();
 
@@ -105,6 +110,11 @@ public class CategoriaController {
         txtNombre.setText(categoria.getNombre());
         chkActiva.setSelected(
                 categoria.isActiva());
+
+        // Con una categoría seleccionada se puede actualizar o eliminar, no guardar
+        btnGuardar.setDisable(true);
+        btnActualizar.setDisable(false);
+        btnEliminar.setDisable(false);
     }
 
     // CARGAR CATEGORÍAS
@@ -204,7 +214,19 @@ public class CategoriaController {
             return;
         }
 
-        Optional<ButtonType> resultado = mostrarConfirmacion("Eliminar categoría", "¿Está seguro de eliminar esta categoría?");
+        // Avisar si hay productos que quedarán sin categoría
+        String mensaje = "¿Está seguro de eliminar esta categoría?";
+        try {
+            int cantidad = productoService.contarPorCategoria(Integer.parseInt(txtId.getText()));
+            if (cantidad > 0) {
+                mensaje += "\n\nTiene " + cantidad + (cantidad == 1 ? " producto asignado, que quedará" : " productos asignados, que quedarán")
+                        + " como \"Sin categoría\". Podrá asignarles otra categoría desde Productos.";
+            }
+        } catch (Exception e) {
+            // Si no se puede contar, se muestra la confirmación normal
+        }
+
+        Optional<ButtonType> resultado = mostrarConfirmacion("Eliminar categoría", mensaje);
         if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
             return;
         }

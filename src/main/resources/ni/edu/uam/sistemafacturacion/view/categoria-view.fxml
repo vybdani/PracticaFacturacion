@@ -8,8 +8,10 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
@@ -17,104 +19,129 @@
             fx:controller="ni.edu.uam.sistemafacturacion.controller.CategoriaController">
 
     <top>
-        <VBox spacing="5">
-            <padding>
-                <Insets top="20" right="20" bottom="15" left="20"/>
-            </padding>
+        <VBox styleClass="view-header">
 
             <Label text="Gestión de Categorías"
-                   style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+                   styleClass="view-title"/>
 
-            <Label text="Administración de las categorías de productos"/>
+            <Label text="Administración de las categorías de productos"
+                   styleClass="view-subtitle"/>
         </VBox>
     </top>
 
     <center>
-        <VBox spacing="15">
+        <VBox spacing="18" styleClass="view-body">
             <padding>
-                <Insets top="10" right="20" bottom="20" left="20"/>
+                <Insets top="22" right="26" bottom="26" left="26"/>
             </padding>
 
             <!-- FORMULARIO -->
-            <GridPane hgap="10" vgap="10">
+            <VBox styleClass="card" spacing="14">
 
-                <Label text="ID:"
-                       GridPane.columnIndex="0"
-                       GridPane.rowIndex="0"/>
+                <Label text="Datos de la categoría" styleClass="dash-card-title"/>
 
-                <TextField fx:id="txtId"
-                           editable="false"
-                           promptText="Generado automáticamente"
-                           GridPane.columnIndex="1"
+                <GridPane hgap="14" vgap="12">
+
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="90"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+
+                    <Label text="ID"
+                           styleClass="field-label"
+                           GridPane.columnIndex="0"
                            GridPane.rowIndex="0"/>
 
-                <Label text="Nombre:"
-                       GridPane.columnIndex="0"
-                       GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtId"
+                               editable="false"
+                               promptText="Generado automáticamente"
+                               GridPane.columnIndex="1"
+                               GridPane.rowIndex="0"/>
 
-                <TextField fx:id="txtNombre"
-                           promptText="Ingrese el nombre de la categoría"
-                           GridPane.columnIndex="1"
+                    <Label text="NOMBRE"
+                           styleClass="field-label"
+                           GridPane.columnIndex="0"
                            GridPane.rowIndex="1"/>
 
-                <Label text="Estado:"
-                       GridPane.columnIndex="0"
-                       GridPane.rowIndex="2"/>
+                    <TextField fx:id="txtNombre"
+                               promptText="Ingrese el nombre de la categoría"
+                               GridPane.columnIndex="1"
+                               GridPane.rowIndex="1"/>
 
-                <CheckBox fx:id="chkActiva"
-                          text="Categoría activa"
-                          selected="true"
-                          GridPane.columnIndex="1"
-                          GridPane.rowIndex="2"/>
+                    <Label text="ESTADO"
+                           styleClass="field-label"
+                           GridPane.columnIndex="0"
+                           GridPane.rowIndex="2"/>
 
-            </GridPane>
+                    <CheckBox fx:id="chkActiva"
+                              text="Categoría activa"
+                              selected="true"
+                              GridPane.columnIndex="1"
+                              GridPane.rowIndex="2"/>
 
-            <!-- BOTONES -->
-            <HBox spacing="10">
+                </GridPane>
 
-                <Button fx:id="btnNuevo"
-                        text="Nuevo"
-                        onAction="#nuevo"/>
+                <HBox spacing="10">
 
-                <Button fx:id="btnGuardar"
-                        text="Guardar"
-                        onAction="#guardar"/>
+                    <Button fx:id="btnNuevo"
+                            text="Nuevo"
+                            onAction="#nuevo"
+                            styleClass="button,button-secondary"/>
 
-                <Button fx:id="btnActualizar"
-                        text="Actualizar"
-                        onAction="#actualizar"/>
+                    <Button fx:id="btnActualizar"
+                            text="Actualizar"
+                            onAction="#actualizar"
+                            styleClass="button,button-secondary"/>
 
-                <Button fx:id="btnEliminar"
-                        text="Eliminar"
-                        onAction="#eliminar"/>
+                    <Button fx:id="btnEliminar"
+                            text="Eliminar"
+                            onAction="#eliminar"
+                            styleClass="button,button-danger"/>
 
-            </HBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Button fx:id="btnGuardar"
+                            text="Guardar"
+                            onAction="#guardar"
+                            styleClass="button,button-primary"/>
+
+                </HBox>
+
+            </VBox>
 
             <!-- TABLA -->
-            <TableView fx:id="tblCategorias"
-                       VBox.vgrow="ALWAYS">
+            <VBox styleClass="card"
+                  spacing="12"
+                  VBox.vgrow="ALWAYS">
 
-                <columns>
+                <Label text="Categorías registradas" styleClass="dash-card-title"/>
 
-                    <TableColumn fx:id="colId"
-                                 text="ID"
-                                 prefWidth="80"/>
+                <TableView fx:id="tblCategorias"
+                           VBox.vgrow="ALWAYS">
 
-                    <TableColumn fx:id="colNombre"
-                                 text="Nombre"
-                                 prefWidth="300"/>
+                    <columns>
 
-                    <TableColumn fx:id="colActiva"
-                                 text="Activa"
-                                 prefWidth="120"/>
+                        <TableColumn fx:id="colId"
+                                     text="ID"
+                                     prefWidth="80"/>
 
-                </columns>
+                        <TableColumn fx:id="colNombre"
+                                     text="Nombre"
+                                     prefWidth="320"/>
 
-                <placeholder>
-                    <Label text="No existen categorías registradas"/>
-                </placeholder>
+                        <TableColumn fx:id="colActiva"
+                                     text="Activa"
+                                     prefWidth="120"/>
 
-            </TableView>
+                    </columns>
+
+                    <placeholder>
+                        <Label text="No existen categorías registradas"/>
+                    </placeholder>
+
+                </TableView>
+
+            </VBox>
 
         </VBox>
     </center>

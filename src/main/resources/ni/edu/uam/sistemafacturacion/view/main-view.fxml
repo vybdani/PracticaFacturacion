@@ -3,97 +3,216 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="ni.edu.uam.sistemafacturacion.controller.MainController">
 
-    <top>
+    <!-- ===================== SIDEBAR ===================== -->
+    <left>
 
-        <VBox spacing="5">
+        <VBox styleClass="sidebar">
 
-            <padding>
-                <Insets top="25"
-                        right="25"
-                        bottom="20"
-                        left="25"/>
-            </padding>
+            <VBox styleClass="sidebar-brand">
 
-            <Label text="Sistema de Facturación"
-                   style="-fx-font-size: 28px;
-                          -fx-font-weight: bold;"/>
+                <StackPane styleClass="brand-badge">
+                    <Label text="SF"/>
+                </StackPane>
 
-            <Label text="Aplicación de escritorio - JavaFX + PostgreSQL"/>
+                <VBox spacing="1">
+                    <Label text="Facturación"
+                           styleClass="brand-title"/>
+                    <Label text="Panel de control"
+                           styleClass="brand-subtitle"/>
+                </VBox>
+
+            </VBox>
+
+            <Label text="MENÚ"
+                   styleClass="nav-section-label"/>
+
+            <VBox styleClass="nav-list">
+
+                <Button fx:id="btnCategorias"
+                        text="🗂   Categorías"
+                        maxWidth="Infinity"
+                        onAction="#abrirCategorias"
+                        styleClass="nav-item,nav-item-active"/>
+
+                <Button text="📦   Productos"
+                        maxWidth="Infinity"
+                        onAction="#abrirProductos"
+                        styleClass="nav-item"/>
+
+                <Button text="👥   Clientes"
+                        maxWidth="Infinity"
+                        disable="true"
+                        styleClass="nav-item"/>
+
+                <Button text="📄   Facturación"
+                        maxWidth="Infinity"
+                        disable="true"
+                        styleClass="nav-item"/>
+
+            </VBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <VBox styleClass="sidebar-footer">
+
+                <Region styleClass="sidebar-divider"/>
+
+                <Button fx:id="btnSalir"
+                        text="⏻   Salir"
+                        maxWidth="Infinity"
+                        onAction="#salir"
+                        styleClass="nav-item,nav-item-danger"/>
+
+                <Label text="v1.0 · JavaFX 21"
+                       styleClass="sidebar-version"/>
+
+            </VBox>
 
         </VBox>
 
-    </top>
+    </left>
 
 
+    <!-- ===================== CONTENIDO ===================== -->
     <center>
 
-        <GridPane hgap="15"
-                  vgap="15"
-                  alignment="CENTER">
+        <VBox styleClass="content-area">
 
-            <Button fx:id="btnCategorias"
-                    text="Categorías"
-                    prefWidth="180"
-                    prefHeight="60"
-                    onAction="#abrirCategorias"
-                    GridPane.columnIndex="0"
-                    GridPane.rowIndex="0"/>
+            <VBox styleClass="topbar">
+                <Label text="BIENVENIDA"
+                       styleClass="topbar-eyebrow"/>
+                <Label text="Sistema de Facturación"
+                       styleClass="topbar-title"/>
+                <Label text="Selecciona un módulo para comenzar a trabajar"
+                       styleClass="topbar-subtitle"/>
+            </VBox>
 
-            <Button text="Productos"
-                    prefWidth="180"
-                    prefHeight="60"
-                    disable="true"
-                    GridPane.columnIndex="1"
-                    GridPane.rowIndex="0"/>
+            <ScrollPane fitToWidth="true"
+                        styleClass="content-scroll"
+                        VBox.vgrow="ALWAYS">
 
-            <Button text="Clientes"
-                    prefWidth="180"
-                    prefHeight="60"
-                    disable="true"
-                    GridPane.columnIndex="0"
-                    GridPane.rowIndex="1"/>
+                <VBox spacing="22">
 
-            <Button text="Facturación"
-                    prefWidth="180"
-                    prefHeight="60"
-                    disable="true"
-                    GridPane.columnIndex="1"
-                    GridPane.rowIndex="1"/>
+                    <padding>
+                        <Insets top="4" right="36" bottom="36" left="36"/>
+                    </padding>
 
-        </GridPane>
+                    <VBox styleClass="hero-card" spacing="6">
+                        <Label text="Gestiona tu negocio en un solo lugar"
+                               styleClass="hero-title"/>
+                        <Label text="Categorías, productos, clientes y facturación conectados a PostgreSQL vía JDBC."
+                               styleClass="hero-text"
+                               wrapText="true"/>
+                    </VBox>
 
-    </center>
+                    <GridPane hgap="18" vgap="18">
 
+                        <Button onAction="#abrirCategorias"
+                                maxWidth="Infinity"
+                                maxHeight="Infinity"
+                                styleClass="dash-card"
+                                GridPane.columnIndex="0"
+                                GridPane.rowIndex="0">
+                            <graphic>
+                                <VBox spacing="12">
+                                    <StackPane styleClass="dash-card-icon">
+                                        <Label text="🗂"/>
+                                    </StackPane>
+                                    <Label text="Categorías" styleClass="dash-card-title"/>
+                                    <Label text="Crea y administra las categorías de productos"
+                                           styleClass="dash-card-desc"
+                                           wrapText="true"/>
+                                    <Label text="DISPONIBLE" styleClass="dash-card-tag"/>
+                                </VBox>
+                            </graphic>
+                        </Button>
 
-    <bottom>
+                        <Button onAction="#abrirProductos"
+                                maxWidth="Infinity"
+                                maxHeight="Infinity"
+                                styleClass="dash-card"
+                                GridPane.columnIndex="1"
+                                GridPane.rowIndex="0">
+                            <graphic>
+                                <VBox spacing="12">
+                                    <StackPane styleClass="dash-card-icon">
+                                        <Label text="📦"/>
+                                    </StackPane>
+                                    <Label text="Productos" styleClass="dash-card-title"/>
+                                    <Label text="Inventario, precios y stock disponible"
+                                           styleClass="dash-card-desc"
+                                           wrapText="true"/>
+                                    <Label text="DISPONIBLE" styleClass="dash-card-tag"/>
+                                </VBox>
+                            </graphic>
+                        </Button>
 
-        <VBox alignment="CENTER"
-              spacing="10">
+                        <Button disable="true"
+                                maxWidth="Infinity"
+                                maxHeight="Infinity"
+                                styleClass="dash-card"
+                                GridPane.columnIndex="0"
+                                GridPane.rowIndex="1">
+                            <graphic>
+                                <VBox spacing="12">
+                                    <StackPane styleClass="dash-card-icon">
+                                        <Label text="👥"/>
+                                    </StackPane>
+                                    <Label text="Clientes" styleClass="dash-card-title"/>
+                                    <Label text="Directorio de clientes y datos de contacto"
+                                           styleClass="dash-card-desc"
+                                           wrapText="true"/>
+                                    <Label text="PRÓXIMAMENTE" styleClass="dash-card-tag,dash-card-tag-soon"/>
+                                </VBox>
+                            </graphic>
+                        </Button>
 
-            <padding>
-                <Insets top="15"
-                        right="20"
-                        bottom="20"
-                        left="20"/>
-            </padding>
+                        <Button disable="true"
+                                maxWidth="Infinity"
+                                maxHeight="Infinity"
+                                styleClass="dash-card"
+                                GridPane.columnIndex="1"
+                                GridPane.rowIndex="1">
+                            <graphic>
+                                <VBox spacing="12">
+                                    <StackPane styleClass="dash-card-icon">
+                                        <Label text="📄"/>
+                                    </StackPane>
+                                    <Label text="Facturación" styleClass="dash-card-title"/>
+                                    <Label text="Genera y consulta facturas de venta"
+                                           styleClass="dash-card-desc"
+                                           wrapText="true"/>
+                                    <Label text="PRÓXIMAMENTE" styleClass="dash-card-tag,dash-card-tag-soon"/>
+                                </VBox>
+                            </graphic>
+                        </Button>
 
-            <Button fx:id="btnSalir"
-                    text="Salir"
-                    prefWidth="120"
-                    onAction="#salir"/>
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="50"/>
+                            <ColumnConstraints percentWidth="50"/>
+                        </columnConstraints>
 
-            <Label text="Java 21 | JavaFX 21 | PostgreSQL | JDBC"/>
+                    </GridPane>
+
+                </VBox>
+
+            </ScrollPane>
 
         </VBox>
 
-    </bottom>
+    </center>
 
 </BorderPane>

@@ -23,6 +23,12 @@ public class App extends Application{
                 650
         );
 
+        scene.getStylesheets().add(
+                App.class.getResource(
+                        "/ni/edu/uam/sistemafacturacion/css/theme.css"
+                ).toExternalForm()
+        );
+
         stage.setTitle("Sistema de Facturación");
 
         stage.setScene(scene);
