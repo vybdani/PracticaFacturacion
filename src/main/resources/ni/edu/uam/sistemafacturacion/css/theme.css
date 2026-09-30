@@ -1,0 +1,467 @@
+/* ==========================================================
+   Sistema de Facturación — tema "Cafecito"
+   Sidebar + dashboard, SOLO café, beige y blanco.
+   ========================================================== */
+
+.root {
+    -fx-ink:           #3B2A1E;   /* café oscuro (sidebar) */
+    -fx-ink-soft:      #4C3A2A;   /* café oscuro, hover sidebar */
+    -fx-app-bg:        #FAF6F1;   /* crema */
+    -fx-card:          #FFFFFF;
+    -fx-card-border:   #ECE1D5;   /* beige claro */
+    -fx-text:          #3B2A1E;   /* café oscuro */
+    -fx-text-soft:     #8C7A68;   /* café grisáceo */
+    -fx-accent:        #8C6A52;   /* café medio */
+    -fx-accent-hover:  #6B4F3B;   /* café más oscuro */
+    -fx-accent-soft:   #F1E7DA;   /* beige suave */
+    -fx-muted:         #C9B7A2;   /* taupe sobre fondo oscuro */
+    -fx-line-dark:     #5A4433;   /* línea sobre sidebar */
+    -fx-white:         #FFFFFF;
+
+    -fx-font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+    -fx-background-color: -fx-app-bg;
+}
+
+/*
+ * Estilo base de todas las etiquetas.
+ * Debe ir ANTES de las clases específicas (.brand-title, .hero-title, ...):
+ * con la misma especificidad gana la regla que aparece después,
+ * y si esta fuera al final pintaría todo el texto de café oscuro.
+ */
+.label {
+    -fx-text-fill: -fx-text;
+    -fx-font-size: 12.5px;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar {
+    -fx-background-color: -fx-ink;
+    -fx-pref-width: 236;
+    -fx-min-width: 236;
+}
+
+.sidebar-brand {
+    -fx-padding: 26 20 22 22;
+    -fx-spacing: 12;
+    -fx-alignment: CENTER_LEFT;
+    -fx-border-color: transparent transparent -fx-line-dark transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.brand-badge {
+    -fx-min-width: 38;
+    -fx-min-height: 38;
+    -fx-max-width: 38;
+    -fx-max-height: 38;
+    -fx-background-color: -fx-accent;
+    -fx-background-radius: 11;
+    -fx-alignment: CENTER;
+    -fx-text-fill: white;
+    -fx-font-weight: 800;
+    -fx-font-size: 14px;
+}
+
+.brand-title {
+    -fx-text-fill: -fx-white;
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+}
+
+.brand-subtitle {
+    -fx-text-fill: -fx-muted;
+    -fx-font-size: 10.5px;
+}
+
+.nav-section-label {
+    -fx-text-fill: #B39D88;
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-padding: 18 0 6 22;
+}
+
+.nav-list {
+    -fx-padding: 0 14 0 14;
+    -fx-spacing: 3;
+}
+
+.nav-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 9;
+    -fx-text-fill: -fx-muted;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-alignment: CENTER_LEFT;
+    -fx-graphic-text-gap: 12;
+    -fx-padding: 10 12 10 12;
+    -fx-max-width: Infinity;
+    -fx-cursor: hand;
+}
+
+.nav-item:hover {
+    -fx-background-color: -fx-ink-soft;
+    -fx-text-fill: -fx-white;
+}
+
+.nav-item-active {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: -fx-white;
+}
+
+.nav-item-active:hover {
+    -fx-background-color: -fx-accent-hover;
+}
+
+.nav-item:disabled {
+    -fx-opacity: 0.4;
+}
+
+.nav-item-danger {
+    -fx-text-fill: -fx-muted;
+}
+
+.nav-item-danger:hover {
+    -fx-background-color: -fx-ink-soft;
+    -fx-text-fill: -fx-white;
+}
+
+.sidebar-footer {
+    -fx-padding: 12 14 18 14;
+    -fx-spacing: 10;
+}
+
+.sidebar-divider {
+    -fx-background-color: -fx-line-dark;
+    -fx-pref-height: 1;
+    -fx-max-height: 1;
+}
+
+.sidebar-version {
+    -fx-text-fill: #A8927D;
+    -fx-font-size: 10px;
+    -fx-padding: 4 0 0 12;
+}
+
+.nav-icon {
+    -fx-font-size: 14px;
+}
+
+/* ================= CONTENIDO ================= */
+
+.content-area {
+    -fx-background-color: -fx-app-bg;
+}
+
+.content-scroll {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.content-scroll > .viewport {
+    -fx-background-color: -fx-app-bg;
+}
+
+.topbar {
+    -fx-padding: 30 36 20 36;
+    -fx-spacing: 4;
+}
+
+.topbar-eyebrow {
+    -fx-text-fill: -fx-accent;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-letter-spacing: 1px;
+}
+
+.topbar-title {
+    -fx-text-fill: -fx-text;
+    -fx-font-size: 26px;
+    -fx-font-weight: 800;
+}
+
+.topbar-subtitle {
+    -fx-text-fill: -fx-text-soft;
+    -fx-font-size: 13px;
+}
+
+.section-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -fx-text;
+}
+
+.section-subtitle {
+    -fx-font-size: 12.5px;
+    -fx-text-fill: -fx-text-soft;
+}
+
+/* ---------- Tarjetas del panel principal ---------- */
+
+.hero-card {
+    -fx-background-color: -fx-ink;
+    -fx-background-radius: 18;
+    -fx-padding: 26 30 26 30;
+    -fx-effect: dropshadow(gaussian, rgba(59,42,30,0.25), 20, 0, 0, 8);
+}
+
+.hero-title {
+    -fx-text-fill: white;
+    -fx-font-size: 19px;
+    -fx-font-weight: 800;
+}
+
+.hero-text {
+    -fx-text-fill: -fx-muted;
+    -fx-font-size: 12.5px;
+}
+
+.dash-card {
+    -fx-background-color: -fx-card;
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-border-color: -fx-card-border;
+    -fx-border-width: 1;
+    -fx-padding: 20;
+    -fx-alignment: TOP_LEFT;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(59,42,30,0.06), 10, 0, 0, 3);
+}
+
+.dash-card:hover {
+    -fx-border-color: -fx-accent;
+    -fx-effect: dropshadow(gaussian, rgba(140,106,82,0.22), 16, 0, 0, 6);
+}
+
+.dash-card:disabled {
+    -fx-opacity: 0.55;
+    -fx-cursor: default;
+}
+
+.dash-card-icon {
+    -fx-min-width: 42;
+    -fx-min-height: 42;
+    -fx-max-width: 42;
+    -fx-max-height: 42;
+    -fx-background-color: -fx-accent-soft;
+    -fx-background-radius: 12;
+    -fx-alignment: CENTER;
+    -fx-font-size: 18px;
+}
+
+.dash-card-title {
+    -fx-text-fill: -fx-text;
+    -fx-font-size: 14.5px;
+    -fx-font-weight: 700;
+}
+
+.dash-card-desc {
+    -fx-text-fill: -fx-text-soft;
+    -fx-font-size: 11.5px;
+}
+
+.dash-card-tag {
+    -fx-background-color: -fx-accent-soft;
+    -fx-text-fill: -fx-accent-hover;
+    -fx-font-size: 9.5px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 20;
+    -fx-padding: 3 10 3 10;
+}
+
+.dash-card-tag-soon {
+    -fx-background-color: #F1F1EC;
+    -fx-text-fill: -fx-text-soft;
+}
+
+/* ---------- Tarjeta genérica (formularios) ---------- */
+
+.card {
+    -fx-background-color: -fx-card;
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-border-color: -fx-card-border;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(59,42,30,0.08), 16, 0, 0, 5);
+    -fx-padding: 20;
+}
+
+/* ================= BOTONES ================= */
+
+.button {
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
+    -fx-padding: 9 20 9 20;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 700;
+    -fx-cursor: hand;
+}
+
+.button-primary {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+}
+
+.button-primary:hover {
+    -fx-background-color: -fx-accent-hover;
+}
+
+.button-secondary {
+    -fx-background-color: -fx-app-bg;
+    -fx-text-fill: -fx-text;
+    -fx-border-color: -fx-card-border;
+    -fx-border-width: 1;
+}
+
+.button-secondary:hover {
+    -fx-background-color: -fx-accent-soft;
+}
+
+.button-danger {
+    -fx-background-color: -fx-white;
+    -fx-text-fill: -fx-accent-hover;
+    -fx-border-color: -fx-accent-hover;
+    -fx-border-width: 1.2;
+}
+
+.button-danger:hover {
+    -fx-background-color: -fx-accent-soft;
+}
+
+.button:disabled {
+    -fx-opacity: 0.5;
+}
+
+/* ================= CAMPOS ================= */
+
+.text-field, .text-area, .combo-box, .check-box {
+    -fx-font-size: 12.5px;
+}
+
+.text-field {
+    -fx-background-color: -fx-app-bg;
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
+    -fx-border-color: -fx-card-border;
+    -fx-border-width: 1.2;
+    -fx-padding: 8 12 8 12;
+    -fx-text-fill: -fx-text;
+    -fx-prompt-text-fill: #A8927D;
+}
+
+.text-field:focused {
+    -fx-background-color: -fx-white;
+    -fx-border-color: -fx-accent;
+}
+
+.text-field:disabled {
+    -fx-opacity: 0.7;
+}
+
+.field-label {
+    -fx-text-fill: -fx-text-soft;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.check-box .box {
+    -fx-background-color: -fx-app-bg;
+    -fx-border-color: -fx-card-border;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: -fx-accent;
+}
+
+/* ================= TABLA ================= */
+
+.table-view {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-card-border;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 0;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: -fx-accent-soft;
+    -fx-background-radius: 12 12 0 0;
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -fx-card-border transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: -fx-accent-hover;
+    -fx-font-weight: 700;
+    -fx-font-size: 11px;
+}
+
+.table-row-cell {
+    -fx-background-color: -fx-white;
+    -fx-border-color: transparent transparent #F1E9DD transparent;
+    -fx-table-cell-border-color: transparent;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: -fx-app-bg;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: -fx-accent-soft;
+}
+
+.table-row-cell:selected .text {
+    -fx-fill: -fx-accent-hover;
+}
+
+.table-view .placeholder .label {
+    -fx-text-fill: -fx-text-soft;
+    -fx-font-style: italic;
+}
+
+/* ================= VISTA SECUNDARIA (Categorías) ================= */
+
+.view-header {
+    -fx-background-color: -fx-ink;
+    -fx-padding: 22 28 20 28;
+    -fx-spacing: 4;
+}
+
+.view-title {
+    -fx-text-fill: -fx-white;
+    -fx-font-size: 20px;
+    -fx-font-weight: 800;
+}
+
+.view-subtitle {
+    -fx-text-fill: -fx-muted;
+    -fx-font-size: 12px;
+}
+
+.view-body {
+    -fx-background-color: -fx-app-bg;
+}
+
+/* ================= TEXTO DENTRO DE CONTENEDORES ================= */
+/*
+ * -fx-text-fill y -fx-font-size puestos en un StackPane no llegan
+ * a la Label de adentro (.label ya define los suyos), así que se
+ * aplican directamente a la etiqueta.
+ */
+
+.brand-badge .label {
+    -fx-text-fill: -fx-white;
+    -fx-font-weight: 800;
+    -fx-font-size: 14px;
+}
+
+.dash-card-icon .label {
+    -fx-font-size: 18px;
+}
