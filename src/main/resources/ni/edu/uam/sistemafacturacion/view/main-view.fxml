@@ -133,8 +133,7 @@
                                     </StackPane>
                                     <Label text="Categorías" styleClass="dash-card-title"/>
                                     <Label text="Crea y administra las categorías de productos"
-                                           styleClass="dash-card-desc"
-                                           wrapText="true"/>
+                                           styleClass="dash-card-desc"/>
                                     <Label text="DISPONIBLE" styleClass="dash-card-tag"/>
                                 </VBox>
                             </graphic>
@@ -153,8 +152,7 @@
                                     </StackPane>
                                     <Label text="Productos" styleClass="dash-card-title"/>
                                     <Label text="Inventario, precios y stock disponible"
-                                           styleClass="dash-card-desc"
-                                           wrapText="true"/>
+                                           styleClass="dash-card-desc"/>
                                     <Label text="DISPONIBLE" styleClass="dash-card-tag"/>
                                 </VBox>
                             </graphic>
@@ -173,8 +171,7 @@
                                     </StackPane>
                                     <Label text="Clientes" styleClass="dash-card-title"/>
                                     <Label text="Directorio de clientes y datos de contacto"
-                                           styleClass="dash-card-desc"
-                                           wrapText="true"/>
+                                           styleClass="dash-card-desc"/>
                                     <Label text="PRÓXIMAMENTE" styleClass="dash-card-tag,dash-card-tag-soon"/>
                                 </VBox>
                             </graphic>
@@ -193,8 +190,7 @@
                                     </StackPane>
                                     <Label text="Facturación" styleClass="dash-card-title"/>
                                     <Label text="Genera y consulta facturas de venta"
-                                           styleClass="dash-card-desc"
-                                           wrapText="true"/>
+                                           styleClass="dash-card-desc"/>
                                     <Label text="PRÓXIMAMENTE" styleClass="dash-card-tag,dash-card-tag-soon"/>
                                 </VBox>
                             </graphic>

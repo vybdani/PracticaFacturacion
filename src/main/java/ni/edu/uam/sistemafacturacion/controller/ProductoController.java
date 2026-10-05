@@ -10,7 +10,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Control;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -20,9 +22,11 @@ import ni.edu.uam.sistemafacturacion.model.Producto;
 import ni.edu.uam.sistemafacturacion.service.CategoriaService;
 import ni.edu.uam.sistemafacturacion.service.ProductoService;
 import ni.edu.uam.sistemafacturacion.util.Alertas;
+import ni.edu.uam.sistemafacturacion.util.Sincronizacion;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,6 +39,8 @@ public class ProductoController {
     // Opción "Todas" del filtro de categoría (se compara por referencia)
     private static final Categoria CATEGORIA_TODAS =
             new Categoria(null, "Todas las categorías", true);
+
+    private static final BigDecimal PRECIO_MAXIMO = new BigDecimal("9999999999.99");
 
     // CAMPOS DEL FORMULARIO
     @FXML
@@ -104,15 +110,12 @@ public class ProductoController {
     // ObservableList -> FilteredList -> TableView
     private final ObservableList<Producto> productos = FXCollections.observableArrayList();
 
-    private FilteredList<Producto> productosFiltrados;
+    private final FilteredList<Producto> productosFiltrados = new FilteredList<>(productos, producto -> true);
 
     // SERVICE
     private CategoriaService categoriaService;
 
     private ProductoService productoService;
-
-    // Producto seleccionado en la tabla (el que se actualiza o elimina)
-    private Producto productoSeleccionado;
 
     // INICIALIZACIÓN
     @FXML
@@ -124,13 +127,18 @@ public class ProductoController {
 
         configurarColumnas();
 
-        cargarCategorias();
+        configurarCombosCategoria();
 
-        cargarProductos();
+        cargarCategorias(true);
 
         configurarFiltros();
 
+        cargarProductos();
+
         configurarSeleccionTabla();
+
+        // Si en la ventana de Categorías se agrega, cambia o elimina una categoría, se recarga esta ventana
+        Sincronizacion.escucharCategorias(tblProductos, this::recargarPorCambioCategorias);
 
         nuevo();
     }
@@ -156,25 +164,35 @@ public class ProductoController {
     }
 
     // CARGAR CATEGORÍAS
-    private void cargarCategorias() {
+    // avisarSiVacia: el aviso "Sin categorías" solo se muestra al abrir la ventana
+    private void cargarCategorias(boolean avisarSiVacia) {
         List<Categoria> categorias = List.of();
-        boolean cargadas = false;
         try {
             categorias = categoriaService.listar();
-            cargadas = true;
-        } catch (Exception e) {
-            Alertas.error("Error al cargar las categorías", e.getMessage());
+
+            if (avisarSiVacia && categorias.isEmpty()) {
+                Alertas.advertencia(
+                        "Sin categorías",
+                        "No se encontraron categorías en la base de datos. "
+                                + "Registre categorías en el módulo de Categorías para poder crear productos."
+                );
+            }
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible cargar las categorías.", e);
         }
 
-        // Solo se avisa si la consulta funcionó y de verdad no hay categorías
-        if (cargadas && categorias.isEmpty()) {
-            Alertas.advertencia(
-                    "Sin categorías",
-                    "No se encontraron categorías en la base de datos. "
-                            + "Registre categorías en el módulo de Categorías para poder crear productos."
-            );
-        }
+        // Formulario: todas las categorías (una categoría vacía está inactiva
+        // y se activa justamente al recibir su primer producto)
+        cmbCategoria.setItems(FXCollections.observableArrayList(categorias));
 
+        // Filtro: "Todas" + todas las categorías
+        ObservableList<Categoria> opcionesFiltro = FXCollections.observableArrayList(CATEGORIA_TODAS);
+        opcionesFiltro.addAll(categorias);
+        cmbFiltroCategoria.setItems(opcionesFiltro);
+    }
+
+    // CONFIGURAR COMBOS DE CATEGORÍA (una sola vez)
+    private void configurarCombosCategoria() {
         StringConverter<Categoria> convertidor = new StringConverter<>() {
             @Override
             public String toString(Categoria categoria) {
@@ -187,26 +205,77 @@ public class ProductoController {
             }
         };
 
-        // Formulario: solo categorías activas
-        cmbCategoria.setItems(FXCollections.observableArrayList(
-                categorias.stream().filter(Categoria::isActiva).toList()
-        ));
         cmbCategoria.setConverter(convertidor);
-
-        // Filtro: "Todas" + todas las categorías
-        ObservableList<Categoria> opcionesFiltro = FXCollections.observableArrayList(CATEGORIA_TODAS);
-        opcionesFiltro.addAll(categorias);
-        cmbFiltroCategoria.setItems(opcionesFiltro);
         cmbFiltroCategoria.setConverter(convertidor);
+
+        // JavaFX deja de mostrar el texto guía ("Seleccione una categoría") después de limpiar el combo;
+        // esta celda lo vuelve a mostrar cuando no hay categoría elegida
+        cmbCategoria.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(Categoria categoria, boolean empty) {
+                super.updateItem(categoria, empty);
+                boolean vacio = empty || categoria == null;
+                setText(vacio ? cmbCategoria.getPromptText() : categoria.getNombre());
+                setStyle(vacio ? "-fx-text-fill: #A8927D;" : "");
+            }
+        });
+    }
+
+    // RECARGAR CUANDO CAMBIAN LAS CATEGORÍAS
+    // Actualiza combos y tabla (nombres de categoría) sin perder lo que el usuario tenía elegido o escrito
+    private void recargarPorCambioCategorias() {
+        Producto seleccionado = tblProductos.getSelectionModel().getSelectedItem();
+        Categoria categoriaFormulario = cmbCategoria.getValue();
+        Categoria categoriaFiltro = cmbFiltroCategoria.getValue();
+
+        String codigo = txtCodigo.getText();
+        String nombre = txtNombre.getText();
+        String precio = txtPrecioVenta.getText();
+        String existencia = txtExistencia.getText();
+        boolean activo = chkActivo.isSelected();
+
+        cargarCategorias(false);
+
+        // Filtro: la misma categoría (con sus datos nuevos) o "Todas" si ya no existe
+        cmbFiltroCategoria.setValue(
+                categoriaFiltro == null || categoriaFiltro == CATEGORIA_TODAS
+                        ? CATEGORIA_TODAS
+                        : cmbFiltroCategoria.getItems().stream()
+                                .filter(c -> Objects.equals(c.getId(), categoriaFiltro.getId()))
+                                .findFirst()
+                                .orElse(CATEGORIA_TODAS)
+        );
+
+        cargarProductos();
+
+        if (seleccionado != null) {
+            // Se vuelve a seleccionar el producto para poder seguir actualizándolo o eliminándolo
+            productosFiltrados.stream()
+                    .filter(p -> p.getId().equals(seleccionado.getId()))
+                    .findFirst()
+                    .ifPresent(p -> tblProductos.getSelectionModel().select(p));
+        }
+
+        // Se restaura lo que el usuario tenía escrito en el formulario
+        txtCodigo.setText(codigo);
+        txtNombre.setText(nombre);
+        txtPrecioVenta.setText(precio);
+        txtExistencia.setText(existencia);
+        chkActivo.setSelected(activo);
+
+        // La categoría elegida, con su nombre nuevo (o vacía si se eliminó)
+        cmbCategoria.setValue(buscarCategoriaEnCombo(categoriaFormulario));
     }
 
     // CARGAR PRODUCTOS DESDE LA BASE DE DATOS
+    // Se llama al abrir la ventana y después de cada INSERT, UPDATE o DELETE
     private void cargarProductos() {
         try {
             productos.setAll(productoService.listar());
-        } catch (Exception e) {
-            Alertas.error("Error al cargar los productos", e.getMessage());
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible cargar los productos.", e);
         }
+        actualizarTotal();
     }
 
     // CONFIGURAR BÚSQUEDA Y FILTROS
@@ -219,7 +288,6 @@ public class ProductoController {
         cmbFiltroCategoria.getSelectionModel().select(CATEGORIA_TODAS);
 
         // La lista original conserva todos los productos; el filtro decide cuáles se muestran
-        productosFiltrados = new FilteredList<>(productos, producto -> true);
         tblProductos.setItems(productosFiltrados);
 
         txtBuscar.textProperty().addListener((observable, anterior, nuevo) -> aplicarFiltros());
@@ -307,8 +375,6 @@ public class ProductoController {
 
     // MOSTRAR PRODUCTO EN EL FORMULARIO
     private void mostrarProducto(Producto producto) {
-        productoSeleccionado = producto;
-
         txtCodigo.setText(producto.getCodigo());
         txtNombre.setText(producto.getNombre());
         cmbCategoria.setValue(buscarCategoriaEnCombo(producto.getCategoria()));
@@ -321,7 +387,7 @@ public class ProductoController {
         btnEliminar.setDisable(false);
     }
 
-    // Busca la categoría del producto dentro de las opciones del ComboBox
+    // Busca la categoría (por id) dentro de las opciones del ComboBox; null si ya no existe
     private Categoria buscarCategoriaEnCombo(Categoria categoria) {
         if (categoria == null) {
             return null;
@@ -329,14 +395,12 @@ public class ProductoController {
         return cmbCategoria.getItems().stream()
                 .filter(c -> Objects.equals(c.getId(), categoria.getId()))
                 .findFirst()
-                .orElse(categoria);
+                .orElse(null);
     }
 
     // NUEVO
     @FXML
     private void nuevo() {
-        productoSeleccionado = null;
-
         txtCodigo.clear();
         txtNombre.clear();
         cmbCategoria.getSelectionModel().clearSelection();
@@ -355,179 +419,164 @@ public class ProductoController {
         btnEliminar.setDisable(true);
     }
 
-    // GUARDAR (CREATE)
+    // GUARDAR (INSERT)
     @FXML
     private void guardar() {
-        Producto datos = leerFormulario(null);
-        if (datos == null) {
-            return;
-        }
-
         try {
-            // Se guarda en la base de datos (asigna el id) y luego en la colección
-            productoService.guardar(datos);
-        } catch (Exception e) {
-            Alertas.error("No se pudo guardar el producto", e.getMessage());
-            return;
-        }
-        productos.add(datos);
+            Producto producto = obtenerProductoFormulario();
 
-        aplicarFiltros();
-        Alertas.informacion("Producto guardado", "El producto se registró correctamente.");
-        nuevo();
+            if (productoService.existeCodigo(producto.getCodigo())) {
+                Alertas.advertencia("Código duplicado", "Ya existe un producto con ese código.");
+                txtCodigo.requestFocus();
+                return;
+            }
+
+            productoService.guardar(producto);
+
+            Alertas.informacion("Producto registrado", "El producto se guardó correctamente.");
+            cargarProductos();
+            Sincronizacion.productosCambiaron();
+            nuevo();
+
+        } catch (IllegalArgumentException e) {
+            Alertas.advertencia("Validación", e.getMessage());
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible registrar el producto.", e);
+        }
     }
 
     // ACTUALIZAR (UPDATE)
     @FXML
     private void actualizar() {
-        if (productoSeleccionado == null) {
-            Alertas.advertencia("Seleccione un producto", "Debe seleccionar un producto de la tabla.");
+        Producto seleccionado = tblProductos.getSelectionModel().getSelectedItem();
+
+        if (seleccionado == null) {
+            Alertas.advertencia("Seleccione un producto", "Debe seleccionar el producto que desea actualizar.");
             return;
         }
 
-        Producto datos = leerFormulario(productoSeleccionado);
-        if (datos == null) {
-            return;
-        }
-
-        if (!Alertas.confirmar("Actualizar producto", "¿Desea actualizar este producto?")) {
-            return;
-        }
-
-        datos.setId(productoSeleccionado.getId());
         try {
-            productoService.actualizar(datos);
-        } catch (Exception e) {
-            Alertas.error("No se pudo actualizar el producto", e.getMessage());
-            return;
+            // Se validan otra vez los datos y se conserva el id: el UPDATE nunca crea un registro nuevo
+            Producto producto = obtenerProductoFormulario();
+            producto.setId(seleccionado.getId());
+
+            if (productoService.existeCodigo(producto.getCodigo(), producto.getId())) {
+                Alertas.advertencia("Código duplicado", "Ya existe otro producto con ese código.");
+                txtCodigo.requestFocus();
+                return;
+            }
+
+            if (!Alertas.confirmar("Actualizar producto", "¿Desea actualizar este producto?")) {
+                return;
+            }
+
+            productoService.actualizar(producto);
+
+            Alertas.informacion("Producto actualizado", "El producto se actualizó correctamente.");
+            cargarProductos();
+            Sincronizacion.productosCambiaron();
+            nuevo();
+
+        } catch (IllegalArgumentException e) {
+            Alertas.advertencia("Validación", e.getMessage());
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible actualizar el producto.", e);
         }
-
-        // Se modifica el objeto seleccionado, no se crea un registro nuevo
-        productoSeleccionado.setCodigo(datos.getCodigo());
-        productoSeleccionado.setNombre(datos.getNombre());
-        productoSeleccionado.setCategoria(datos.getCategoria());
-        productoSeleccionado.setPrecioVenta(datos.getPrecioVenta());
-        productoSeleccionado.setExistencia(datos.getExistencia());
-        productoSeleccionado.setActivo(datos.isActivo());
-
-        // Reaplicar el filtro por si el producto modificado ya no cumple la búsqueda
-        aplicarFiltros();
-        tblProductos.refresh();
-
-        Alertas.informacion("Producto actualizado", "El producto se actualizó correctamente.");
-        nuevo();
     }
 
     // ELIMINAR (DELETE)
     @FXML
     private void eliminar() {
-        if (productoSeleccionado == null) {
-            Alertas.advertencia("Seleccione un producto", "Debe seleccionar un producto de la tabla.");
+        Producto seleccionado = tblProductos.getSelectionModel().getSelectedItem();
+
+        if (seleccionado == null) {
+            Alertas.advertencia("Seleccione un producto", "Debe seleccionar el producto que desea eliminar.");
             return;
         }
 
         if (!Alertas.confirmar(
                 "Eliminar producto",
-                "¿Está seguro de eliminar el producto \"" + productoSeleccionado.getNombre() + "\"?"
+                "¿Está seguro de eliminar el producto \"" + seleccionado.getNombre() + "\"?"
         )) {
             return;
         }
 
         try {
-            productoService.eliminar(productoSeleccionado.getId());
-        } catch (Exception e) {
-            Alertas.error("No se pudo eliminar el producto", e.getMessage());
-            return;
-        }
-        productos.remove(productoSeleccionado);
+            productoService.eliminar(seleccionado.getId());
 
-        actualizarTotal();
-        Alertas.informacion("Producto eliminado", "El producto se eliminó correctamente.");
-        nuevo();
+            Alertas.informacion("Producto eliminado", "El producto se eliminó correctamente.");
+            cargarProductos();
+            Sincronizacion.productosCambiaron();
+            nuevo();
+
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible eliminar el producto.", e);
+        }
     }
 
     // LEER Y VALIDAR FORMULARIO
-    // Devuelve un Producto con los datos del formulario, o null si hay errores.
-    // "editando" es el producto que se está actualizando (para no marcar su propio código como duplicado).
-    private Producto leerFormulario(Producto editando) {
+    // Devuelve el producto con los datos del formulario o lanza IllegalArgumentException si hay errores.
+    private Producto obtenerProductoFormulario() {
         String codigo = txtCodigo.getText().trim();
         String nombre = txtNombre.getText().trim();
-        Categoria categoria = cmbCategoria.getValue();
-        String textoPrecio = txtPrecioVenta.getText().trim();
-        String textoExistencia = txtExistencia.getText().trim();
 
         if (codigo.isEmpty()) {
-            Alertas.advertencia("Campo requerido", "Debe ingresar el código del producto.");
-            txtCodigo.requestFocus();
-            return null;
+            throw invalido(txtCodigo, "El código es obligatorio.");
         }
 
         if (codigo.length() > 30) {
-            Alertas.advertencia("Código demasiado largo", "El código no puede superar los 30 caracteres.");
-            txtCodigo.requestFocus();
-            return null;
-        }
-
-        if (existeCodigo(codigo, editando)) {
-            Alertas.advertencia("Código duplicado", "Ya existe un producto con el código \"" + codigo + "\".");
-            txtCodigo.requestFocus();
-            return null;
+            throw invalido(txtCodigo, "El código no puede superar los 30 caracteres.");
         }
 
         if (nombre.isEmpty()) {
-            Alertas.advertencia("Campo requerido", "Debe ingresar el nombre del producto.");
-            txtNombre.requestFocus();
-            return null;
+            throw invalido(txtNombre, "El nombre es obligatorio.");
         }
 
         if (nombre.length() > 150) {
-            Alertas.advertencia("Nombre demasiado largo", "El nombre no puede superar los 150 caracteres.");
-            txtNombre.requestFocus();
-            return null;
+            throw invalido(txtNombre, "El nombre no puede superar los 150 caracteres.");
         }
 
+        Categoria categoria = cmbCategoria.getSelectionModel().getSelectedItem();
+
         if (categoria == null) {
-            Alertas.advertencia("Campo requerido", "Debe seleccionar una categoría.");
-            cmbCategoria.requestFocus();
-            return null;
+            throw invalido(cmbCategoria, "Debe seleccionar una categoría.");
         }
 
         BigDecimal precioVenta;
         try {
+            // Se acepta la coma como separador decimal (10,50 = 10.50)
+            String textoPrecio = txtPrecioVenta.getText().trim().replace(',', '.');
             precioVenta = new BigDecimal(textoPrecio).setScale(2, RoundingMode.HALF_UP);
         } catch (NumberFormatException e) {
-            Alertas.advertencia("Precio inválido", "El precio de venta debe ser un valor numérico.");
-            txtPrecioVenta.requestFocus();
-            return null;
+            throw invalido(txtPrecioVenta, "El precio debe ser un valor numérico.");
         }
 
         if (precioVenta.compareTo(BigDecimal.ZERO) <= 0) {
-            Alertas.advertencia("Precio inválido", "El precio de venta debe ser mayor que cero.");
-            txtPrecioVenta.requestFocus();
-            return null;
+            throw invalido(txtPrecioVenta, "El precio de venta debe ser mayor que cero.");
+        }
+
+        // La columna precio_venta es NUMERIC(12,2): hasta 10 dígitos enteros
+        if (precioVenta.compareTo(PRECIO_MAXIMO) > 0) {
+            throw invalido(txtPrecioVenta, "El precio de venta no puede superar " + PRECIO_MAXIMO.toPlainString() + ".");
         }
 
         int existencia;
         try {
-            existencia = Integer.parseInt(textoExistencia);
+            existencia = Integer.parseInt(txtExistencia.getText().trim());
         } catch (NumberFormatException e) {
-            Alertas.advertencia("Existencia inválida", "La existencia debe ser un número entero.");
-            txtExistencia.requestFocus();
-            return null;
+            throw invalido(txtExistencia, "La existencia debe ser un número entero.");
         }
 
         if (existencia < 0) {
-            Alertas.advertencia("Existencia inválida", "La existencia no puede ser negativa.");
-            txtExistencia.requestFocus();
-            return null;
+            throw invalido(txtExistencia, "La existencia no puede ser negativa.");
         }
 
         return new Producto(null, codigo, nombre, categoria, precioVenta, existencia, chkActivo.isSelected());
     }
 
-    // Verifica si otro producto ya usa el código (sin distinguir mayúsculas/minúsculas)
-    private boolean existeCodigo(String codigo, Producto excluir) {
-        return productos.stream()
-                .anyMatch(p -> p != excluir && p.getCodigo().equalsIgnoreCase(codigo));
+    // Lleva el cursor al campo con error y crea la excepción con el mensaje
+    private IllegalArgumentException invalido(Control campo, String mensaje) {
+        campo.requestFocus();
+        return new IllegalArgumentException(mensaje);
     }
 }
