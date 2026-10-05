@@ -1,13 +1,10 @@
 package ni.edu.uam.sistemafacturacion.controller;
 
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -15,8 +12,7 @@ import javafx.scene.control.TextField;
 import ni.edu.uam.sistemafacturacion.model.Categoria;
 import ni.edu.uam.sistemafacturacion.service.CategoriaService;
 import ni.edu.uam.sistemafacturacion.service.ProductoService;
-
-import java.util.Optional;
+import ni.edu.uam.sistemafacturacion.util.Alertas;
 
 public class CategoriaController {
     // CAMPOS DEL FORMULARIO
@@ -40,12 +36,9 @@ public class CategoriaController {
     private TableColumn<Categoria, String> colNombre;
 
     @FXML
-    private TableColumn<Categoria, Boolean> colActiva;
+    private TableColumn<Categoria, String> colActiva;
 
     // BOTONES
-    @FXML
-    private Button btnNuevo;
-
     @FXML
     private Button btnGuardar;
 
@@ -59,6 +52,9 @@ public class CategoriaController {
     private CategoriaService categoriaService;
 
     private ProductoService productoService;
+
+    // Categoría seleccionada en la tabla (la que se actualiza o elimina)
+    private Categoria categoriaSeleccionada;
 
     // INICIALIZACIÓN
     @FXML
@@ -85,7 +81,7 @@ public class CategoriaController {
 
         colNombre.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getNombre()));
 
-        colActiva.setCellValueFactory(cellData -> new SimpleBooleanProperty(cellData.getValue().isActiva()).asObject());
+        colActiva.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().isActiva() ? "Sí" : "No"));
     }
 
     // SELECCIONAR REGISTRO
@@ -104,12 +100,12 @@ public class CategoriaController {
     }
 
     // MOSTRAR CATEGORIA
-    private void mostrarCategoria(
-            Categoria categoria) {
-        txtId.setText( String.valueOf(categoria.getId()));
+    private void mostrarCategoria(Categoria categoria) {
+        categoriaSeleccionada = categoria;
+
+        txtId.setText(String.valueOf(categoria.getId()));
         txtNombre.setText(categoria.getNombre());
-        chkActiva.setSelected(
-                categoria.isActiva());
+        chkActiva.setSelected(categoria.isActiva());
 
         // Con una categoría seleccionada se puede actualizar o eliminar, no guardar
         btnGuardar.setDisable(true);
@@ -124,13 +120,15 @@ public class CategoriaController {
                     FXCollections.observableArrayList(categoriaService.listar())
             );
         } catch (Exception e) {
-            mostrarError("Error al cargar las categorías", e.getMessage());
+            Alertas.error("Error al cargar las categorías", e.getMessage());
         }
     }
 
     // NUEVO
     @FXML
     private void nuevo() {
+        categoriaSeleccionada = null;
+
         txtId.clear();
         txtNombre.clear();
         chkActiva.setSelected(true);
@@ -138,6 +136,7 @@ public class CategoriaController {
                 .getSelectionModel()
                 .clearSelection();
         txtNombre.requestFocus();
+
         btnGuardar.setDisable(false);
         btnActualizar.setDisable(true);
         btnEliminar.setDisable(true);
@@ -146,155 +145,121 @@ public class CategoriaController {
     // GUARDAR
     @FXML
     private void guardar() {
-        if (!validarFormulario()) {
+        if (!validarFormulario(null)) {
             return;
         }
 
-        String nombre = txtNombre.getText().trim();
-
-        boolean activa = chkActiva.isSelected();
-
-        Categoria categoria = new Categoria();
-        categoria.setNombre(nombre);
-        categoria.setActiva(activa);
+        Categoria categoria = new Categoria(null, txtNombre.getText().trim(), chkActiva.isSelected());
         try {
             categoriaService.guardar(categoria);
-            mostrarInformacion(
-                    "Categoría guardada",
-                    "La categoría se registró correctamente."
-            );
-            cargarCategorias();
-            nuevo();
         } catch (Exception e) {
-            mostrarError("No se pudo guardar la categoría", e.getMessage());
+            Alertas.error("No se pudo guardar la categoría", e.getMessage());
+            return;
         }
+
+        Alertas.informacion("Categoría guardada", "La categoría se registró correctamente.");
+        cargarCategorias();
+        nuevo();
     }
 
     // ACTUALIZAR
     @FXML
     private void actualizar() {
-        if (!validarFormulario()) {
+        if (categoriaSeleccionada == null) {
+            Alertas.advertencia("Seleccione una categoría", "Debe seleccionar una categoría de la tabla.");
             return;
         }
 
-        if (txtId.getText().isBlank()) {
-            mostrarAdvertencia("Seleccione una categoría", "Debe seleccionar una categoría de la tabla.");
+        if (!validarFormulario(categoriaSeleccionada)) {
             return;
         }
 
-        Optional<ButtonType> resultado =
-                mostrarConfirmacion("Actualizar categoría", "¿Desea actualizar esta categoría?");
-
-        if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
+        if (!Alertas.confirmar("Actualizar categoría", "¿Desea actualizar esta categoría?")) {
             return;
         }
 
+        Categoria categoria = new Categoria(
+                categoriaSeleccionada.getId(), txtNombre.getText().trim(), chkActiva.isSelected());
         try {
-            Integer id = Integer.parseInt(txtId.getText());
-            Categoria categoria = new Categoria();
-            categoria.setId(id);
-            categoria.setNombre( txtNombre.getText().trim());
-            categoria.setActiva( chkActiva.isSelected());
             categoriaService.actualizar(categoria);
-            mostrarInformacion("Categoría actualizada", "La categoría se actualizó correctamente.");
-            cargarCategorias();
-            nuevo();
-        } catch (NumberFormatException e) {
-            mostrarError("ID inválido", "El identificador de la categoría no es válido.");
         } catch (Exception e) {
-            mostrarError("No se pudo actualizar la categoría", e.getMessage());
+            Alertas.error("No se pudo actualizar la categoría", e.getMessage());
+            return;
         }
+
+        Alertas.informacion("Categoría actualizada", "La categoría se actualizó correctamente.");
+        cargarCategorias();
+        nuevo();
     }
 
     // ELIMINAR
     @FXML
     private void eliminar() {
-        if (txtId.getText().isBlank()) {
-            mostrarAdvertencia("Seleccione una categoría", "Debe seleccionar una categoría de la tabla.");
+        if (categoriaSeleccionada == null) {
+            Alertas.advertencia("Seleccione una categoría", "Debe seleccionar una categoría de la tabla.");
             return;
         }
 
         // Avisar si hay productos que quedarán sin categoría
-        String mensaje = "¿Está seguro de eliminar esta categoría?";
-        try {
-            int cantidad = productoService.contarPorCategoria(Integer.parseInt(txtId.getText()));
-            if (cantidad > 0) {
-                mensaje += "\n\nTiene " + cantidad + (cantidad == 1 ? " producto asignado, que quedará" : " productos asignados, que quedarán")
-                        + " como \"Sin categoría\". Podrá asignarles otra categoría desde Productos.";
-            }
-        } catch (Exception e) {
-            // Si no se puede contar, se muestra la confirmación normal
+        String mensaje = "¿Está seguro de eliminar la categoría \"" + categoriaSeleccionada.getNombre() + "\"?";
+        int cantidad = contarProductosAsignados(categoriaSeleccionada.getId());
+        if (cantidad > 0) {
+            mensaje += "\n\nTiene " + cantidad + (cantidad == 1 ? " producto asignado, que quedará" : " productos asignados, que quedarán")
+                    + " como \"Sin categoría\". Podrá asignarles otra categoría desde Productos.";
         }
 
-        Optional<ButtonType> resultado = mostrarConfirmacion("Eliminar categoría", mensaje);
-        if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
+        if (!Alertas.confirmar("Eliminar categoría", mensaje)) {
             return;
         }
 
         try {
-            Integer id = Integer.parseInt(txtId.getText());
-            categoriaService.eliminar(id);
-            mostrarInformacion("Categoría eliminada", "La categoría se eliminó correctamente.");
-            cargarCategorias();
-            nuevo();
-        } catch (NumberFormatException e) {
-            mostrarError("ID inválido","El identificador de la categoría no es válido.");
+            categoriaService.eliminar(categoriaSeleccionada.getId());
         } catch (Exception e) {
-            mostrarError("No se pudo eliminar la categoría", e.getMessage());
+            Alertas.error("No se pudo eliminar la categoría", e.getMessage());
+            return;
+        }
+
+        Alertas.informacion("Categoría eliminada", "La categoría se eliminó correctamente.");
+        cargarCategorias();
+        nuevo();
+    }
+
+    // Si no se puede contar, se toma como 0 y se muestra la confirmación normal
+    private int contarProductosAsignados(int categoriaId) {
+        try {
+            return productoService.contarPorCategoria(categoriaId);
+        } catch (Exception e) {
+            return 0;
         }
     }
 
     // VALIDAR FORMULARIO
-    private boolean validarFormulario() {
+    // "editando" es la categoría que se está actualizando (para no marcar su propio nombre como duplicado).
+    private boolean validarFormulario(Categoria editando) {
         String nombre = txtNombre.getText().trim();
         if (nombre.isEmpty()) {
-            mostrarAdvertencia("Campo requerido", "Debe ingresar el nombre de la categoría.");
+            Alertas.advertencia("Campo requerido", "Debe ingresar el nombre de la categoría.");
             txtNombre.requestFocus();
             return false;
         }
 
         if (nombre.length() > 100) {
-            mostrarAdvertencia("Nombre demasiado largo", "El nombre no puede superar los 100 caracteres.");
+            Alertas.advertencia("Nombre demasiado largo", "El nombre no puede superar los 100 caracteres.");
+            txtNombre.requestFocus();
+            return false;
+        }
+
+        if (existeNombre(nombre, editando)) {
+            Alertas.advertencia("Categoría duplicada", "Ya existe una categoría con el nombre \"" + nombre + "\".");
             txtNombre.requestFocus();
             return false;
         }
         return true;
     }
 
-    // ALERTA DE INFORMACIÓN
-    private void mostrarInformacion(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje);
-        alert.showAndWait();
-    }
-
-    // ALERTA DE ADVERTENCIA
-    private void mostrarAdvertencia(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje);
-        alert.showAndWait();
-    }
-
-    // ALERTA DE ERROR
-    private void mostrarError(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje != null ? mensaje : "Se produjo un error inesperado.");
-        alert.showAndWait();
-    }
-
-
-    // CONFIRMACIÓN
-    private Optional<ButtonType> mostrarConfirmacion(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje);
-        return alert.showAndWait();
+    // Verifica si otra categoría ya usa el nombre (sin distinguir mayúsculas/minúsculas)
+    private boolean existeNombre(String nombre, Categoria excluir) {
+        return tblCategorias.getItems().stream()
+                .anyMatch(c -> c != excluir && c.getNombre().equalsIgnoreCase(nombre));
     }
 }

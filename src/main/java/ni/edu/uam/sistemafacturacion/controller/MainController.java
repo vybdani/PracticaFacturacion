@@ -1,32 +1,20 @@
 package ni.edu.uam.sistemafacturacion.controller;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ni.edu.uam.sistemafacturacion.App;
+import ni.edu.uam.sistemafacturacion.util.Alertas;
 
 import java.io.IOException;
 
 public class MainController {
-    @FXML
-    private Button btnCategorias;
 
     @FXML
     private Button btnSalir;
-
-
-    @FXML
-    public void initialize() {
-
-        System.out.println(
-                "MainController inicializado correctamente."
-        );
-    }
 
 
     /**
@@ -82,9 +70,7 @@ public class MainController {
             );
 
             scene.getStylesheets().add(
-                    App.class.getResource(
-                            "/ni/edu/uam/sistemafacturacion/css/theme.css"
-                    ).toExternalForm()
+                    App.class.getResource(App.TEMA_CSS).toExternalForm()
             );
 
             Stage stage = new Stage();
@@ -108,18 +94,13 @@ public class MainController {
              * Hace que la nueva ventana dependa
              * de la ventana principal.
              */
-            Stage ventanaPrincipal =
-                    (Stage) btnCategorias
-                            .getScene()
-                            .getWindow();
-
-            stage.initOwner(ventanaPrincipal);
+            stage.initOwner(ventanaPrincipal());
 
             stage.showAndWait();
 
         } catch (IOException e) {
 
-            mostrarError(
+            Alertas.error(
                     "Error al abrir " + titulo,
                     e.getMessage()
             );
@@ -132,39 +113,11 @@ public class MainController {
      */
     @FXML
     private void salir() {
-
-        Stage stage =
-                (Stage) btnSalir
-                        .getScene()
-                        .getWindow();
-
-        stage.close();
+        ventanaPrincipal().close();
     }
 
 
-    /**
-     * Muestra una ventana de error.
-     */
-    private void mostrarError(
-            String titulo,
-            String mensaje) {
-
-        Alert alert =
-                new Alert(
-                        Alert.AlertType.ERROR
-                );
-
-        alert.setTitle(titulo);
-
-        alert.setHeaderText(null);
-
-        alert.setContentText(
-                mensaje != null
-                        ? mensaje
-                        : "Se produjo un error inesperado."
-        );
-        System.out.println("Error: " + mensaje);
-
-        alert.showAndWait();
+    private Stage ventanaPrincipal() {
+        return (Stage) btnSalir.getScene().getWindow();
     }
 }

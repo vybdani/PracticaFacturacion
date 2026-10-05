@@ -41,11 +41,11 @@
 
             <VBox styleClass="nav-list">
 
-                <Button fx:id="btnCategorias"
+                <Button
                         text="🗂   Categorías"
                         maxWidth="Infinity"
                         onAction="#abrirCategorias"
-                        styleClass="nav-item,nav-item-active"/>
+                        styleClass="nav-item"/>
 
                 <Button text="📦   Productos"
                         maxWidth="Infinity"
@@ -74,7 +74,7 @@
                         text="⏻   Salir"
                         maxWidth="Infinity"
                         onAction="#salir"
-                        styleClass="nav-item,nav-item-danger"/>
+                        styleClass="nav-item"/>
 
                 <Label text="v1.0 · JavaFX 21"
                        styleClass="sidebar-version"/>

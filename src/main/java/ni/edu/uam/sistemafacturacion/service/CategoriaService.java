@@ -20,12 +20,11 @@ public class CategoriaService {
         categoriaDao.guardar(categoria);
     }
 
-    public void eliminar(int id) {
-        categoriaDao.eliminar(id);
-    }
-
     public void actualizar(Categoria categoria) {
         categoriaDao.actualizar(categoria);
     }
-}
 
+    public void eliminar(int id) {
+        categoriaDao.eliminar(id);
+    }
+}

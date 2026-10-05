@@ -9,7 +9,7 @@
 
 CREATE TABLE IF NOT EXISTS categorias (
     id     SERIAL       PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
     activa BOOLEAN      NOT NULL DEFAULT TRUE
 );
 

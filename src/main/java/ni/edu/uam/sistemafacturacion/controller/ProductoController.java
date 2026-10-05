@@ -7,9 +7,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -21,12 +19,12 @@ import ni.edu.uam.sistemafacturacion.model.Categoria;
 import ni.edu.uam.sistemafacturacion.model.Producto;
 import ni.edu.uam.sistemafacturacion.service.CategoriaService;
 import ni.edu.uam.sistemafacturacion.service.ProductoService;
+import ni.edu.uam.sistemafacturacion.util.Alertas;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class ProductoController {
     // OPCIONES DEL FILTRO DE ESTADO
@@ -94,9 +92,6 @@ public class ProductoController {
 
     // BOTONES
     @FXML
-    private Button btnNuevo;
-
-    @FXML
     private Button btnGuardar;
 
     @FXML
@@ -163,14 +158,17 @@ public class ProductoController {
     // CARGAR CATEGORÍAS
     private void cargarCategorias() {
         List<Categoria> categorias = List.of();
+        boolean cargadas = false;
         try {
             categorias = categoriaService.listar();
+            cargadas = true;
         } catch (Exception e) {
-            mostrarError("Error al cargar las categorías", e.getMessage());
+            Alertas.error("Error al cargar las categorías", e.getMessage());
         }
 
-        if (categorias.isEmpty()) {
-            mostrarAdvertencia(
+        // Solo se avisa si la consulta funcionó y de verdad no hay categorías
+        if (cargadas && categorias.isEmpty()) {
+            Alertas.advertencia(
                     "Sin categorías",
                     "No se encontraron categorías en la base de datos. "
                             + "Registre categorías en el módulo de Categorías para poder crear productos."
@@ -207,7 +205,7 @@ public class ProductoController {
         try {
             productos.setAll(productoService.listar());
         } catch (Exception e) {
-            mostrarError("Error al cargar los productos", e.getMessage());
+            Alertas.error("Error al cargar los productos", e.getMessage());
         }
     }
 
@@ -369,13 +367,13 @@ public class ProductoController {
             // Se guarda en la base de datos (asigna el id) y luego en la colección
             productoService.guardar(datos);
         } catch (Exception e) {
-            mostrarError("No se pudo guardar el producto", e.getMessage());
+            Alertas.error("No se pudo guardar el producto", e.getMessage());
             return;
         }
         productos.add(datos);
 
         aplicarFiltros();
-        mostrarInformacion("Producto guardado", "El producto se registró correctamente.");
+        Alertas.informacion("Producto guardado", "El producto se registró correctamente.");
         nuevo();
     }
 
@@ -383,7 +381,7 @@ public class ProductoController {
     @FXML
     private void actualizar() {
         if (productoSeleccionado == null) {
-            mostrarAdvertencia("Seleccione un producto", "Debe seleccionar un producto de la tabla.");
+            Alertas.advertencia("Seleccione un producto", "Debe seleccionar un producto de la tabla.");
             return;
         }
 
@@ -392,10 +390,7 @@ public class ProductoController {
             return;
         }
 
-        Optional<ButtonType> resultado =
-                mostrarConfirmacion("Actualizar producto", "¿Desea actualizar este producto?");
-
-        if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
+        if (!Alertas.confirmar("Actualizar producto", "¿Desea actualizar este producto?")) {
             return;
         }
 
@@ -403,7 +398,7 @@ public class ProductoController {
         try {
             productoService.actualizar(datos);
         } catch (Exception e) {
-            mostrarError("No se pudo actualizar el producto", e.getMessage());
+            Alertas.error("No se pudo actualizar el producto", e.getMessage());
             return;
         }
 
@@ -419,7 +414,7 @@ public class ProductoController {
         aplicarFiltros();
         tblProductos.refresh();
 
-        mostrarInformacion("Producto actualizado", "El producto se actualizó correctamente.");
+        Alertas.informacion("Producto actualizado", "El producto se actualizó correctamente.");
         nuevo();
     }
 
@@ -427,28 +422,27 @@ public class ProductoController {
     @FXML
     private void eliminar() {
         if (productoSeleccionado == null) {
-            mostrarAdvertencia("Seleccione un producto", "Debe seleccionar un producto de la tabla.");
+            Alertas.advertencia("Seleccione un producto", "Debe seleccionar un producto de la tabla.");
             return;
         }
 
-        Optional<ButtonType> resultado = mostrarConfirmacion(
+        if (!Alertas.confirmar(
                 "Eliminar producto",
                 "¿Está seguro de eliminar el producto \"" + productoSeleccionado.getNombre() + "\"?"
-        );
-        if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
+        )) {
             return;
         }
 
         try {
             productoService.eliminar(productoSeleccionado.getId());
         } catch (Exception e) {
-            mostrarError("No se pudo eliminar el producto", e.getMessage());
+            Alertas.error("No se pudo eliminar el producto", e.getMessage());
             return;
         }
         productos.remove(productoSeleccionado);
 
         actualizarTotal();
-        mostrarInformacion("Producto eliminado", "El producto se eliminó correctamente.");
+        Alertas.informacion("Producto eliminado", "El producto se eliminó correctamente.");
         nuevo();
     }
 
@@ -463,25 +457,37 @@ public class ProductoController {
         String textoExistencia = txtExistencia.getText().trim();
 
         if (codigo.isEmpty()) {
-            mostrarAdvertencia("Campo requerido", "Debe ingresar el código del producto.");
+            Alertas.advertencia("Campo requerido", "Debe ingresar el código del producto.");
+            txtCodigo.requestFocus();
+            return null;
+        }
+
+        if (codigo.length() > 30) {
+            Alertas.advertencia("Código demasiado largo", "El código no puede superar los 30 caracteres.");
             txtCodigo.requestFocus();
             return null;
         }
 
         if (existeCodigo(codigo, editando)) {
-            mostrarAdvertencia("Código duplicado", "Ya existe un producto con el código \"" + codigo + "\".");
+            Alertas.advertencia("Código duplicado", "Ya existe un producto con el código \"" + codigo + "\".");
             txtCodigo.requestFocus();
             return null;
         }
 
         if (nombre.isEmpty()) {
-            mostrarAdvertencia("Campo requerido", "Debe ingresar el nombre del producto.");
+            Alertas.advertencia("Campo requerido", "Debe ingresar el nombre del producto.");
+            txtNombre.requestFocus();
+            return null;
+        }
+
+        if (nombre.length() > 150) {
+            Alertas.advertencia("Nombre demasiado largo", "El nombre no puede superar los 150 caracteres.");
             txtNombre.requestFocus();
             return null;
         }
 
         if (categoria == null) {
-            mostrarAdvertencia("Campo requerido", "Debe seleccionar una categoría.");
+            Alertas.advertencia("Campo requerido", "Debe seleccionar una categoría.");
             cmbCategoria.requestFocus();
             return null;
         }
@@ -490,13 +496,13 @@ public class ProductoController {
         try {
             precioVenta = new BigDecimal(textoPrecio).setScale(2, RoundingMode.HALF_UP);
         } catch (NumberFormatException e) {
-            mostrarAdvertencia("Precio inválido", "El precio de venta debe ser un valor numérico.");
+            Alertas.advertencia("Precio inválido", "El precio de venta debe ser un valor numérico.");
             txtPrecioVenta.requestFocus();
             return null;
         }
 
         if (precioVenta.compareTo(BigDecimal.ZERO) <= 0) {
-            mostrarAdvertencia("Precio inválido", "El precio de venta debe ser mayor que cero.");
+            Alertas.advertencia("Precio inválido", "El precio de venta debe ser mayor que cero.");
             txtPrecioVenta.requestFocus();
             return null;
         }
@@ -505,13 +511,13 @@ public class ProductoController {
         try {
             existencia = Integer.parseInt(textoExistencia);
         } catch (NumberFormatException e) {
-            mostrarAdvertencia("Existencia inválida", "La existencia debe ser un número entero.");
+            Alertas.advertencia("Existencia inválida", "La existencia debe ser un número entero.");
             txtExistencia.requestFocus();
             return null;
         }
 
         if (existencia < 0) {
-            mostrarAdvertencia("Existencia inválida", "La existencia no puede ser negativa.");
+            Alertas.advertencia("Existencia inválida", "La existencia no puede ser negativa.");
             txtExistencia.requestFocus();
             return null;
         }
@@ -523,41 +529,5 @@ public class ProductoController {
     private boolean existeCodigo(String codigo, Producto excluir) {
         return productos.stream()
                 .anyMatch(p -> p != excluir && p.getCodigo().equalsIgnoreCase(codigo));
-    }
-
-    // ALERTA DE INFORMACIÓN
-    private void mostrarInformacion(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje);
-        alert.showAndWait();
-    }
-
-    // ALERTA DE ADVERTENCIA
-    private void mostrarAdvertencia(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje);
-        alert.showAndWait();
-    }
-
-    // ALERTA DE ERROR
-    private void mostrarError(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje != null ? mensaje : "Se produjo un error inesperado.");
-        alert.showAndWait();
-    }
-
-    // CONFIRMACIÓN
-    private Optional<ButtonType> mostrarConfirmacion(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje);
-        return alert.showAndWait();
     }
 }

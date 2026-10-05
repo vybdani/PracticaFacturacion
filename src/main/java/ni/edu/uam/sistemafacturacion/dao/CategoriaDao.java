@@ -10,7 +10,7 @@ import java.util.List;
 public class CategoriaDao {
     public List<Categoria> listar() {
         List<Categoria> categorias = new ArrayList<>();
-        String sql = "select * from categorias";
+        String sql = "SELECT id, nombre, activa FROM categorias ORDER BY id";
         try (
                 Connection connection = DatabaseConnection.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql);
@@ -31,7 +31,6 @@ public class CategoriaDao {
     }
 
     public void guardar(Categoria categoria) {
-
         String sql = "INSERT INTO categorias(nombre, activa) VALUES (?, ?)";
         try (
                 Connection connection = DatabaseConnection.getConnection();
@@ -45,32 +44,31 @@ public class CategoriaDao {
         }
     }
 
-    public void eliminar(int id) {
-        String sql = "DELETE FROM categorias WHERE id = ?";
-        try(
-                Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql);
-        ){
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        }catch(SQLException e){
-            throw new RuntimeException("Error al eliminar la categoría: " + e.getMessage(), e);
-        }
-    }
-
     public void actualizar(Categoria categoria) {
-        String sql =  "UPDATE categorias SET nombre = ?, activa = ? WHERE id = ?";
-        try(
+        String sql = "UPDATE categorias SET nombre = ?, activa = ? WHERE id = ?";
+        try (
                 Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql);
-        ){
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
             statement.setString(1, categoria.getNombre());
             statement.setBoolean(2, categoria.isActiva());
             statement.setInt(3, categoria.getId());
             statement.executeUpdate();
-        }catch(SQLException e){
+        } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar la categoría: " + e.getMessage(), e);
         }
     }
 
+    public void eliminar(int id) {
+        String sql = "DELETE FROM categorias WHERE id = ?";
+        try (
+                Connection connection = DatabaseConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+            statement.setInt(1, id);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al eliminar la categoría: " + e.getMessage(), e);
+        }
+    }
 }

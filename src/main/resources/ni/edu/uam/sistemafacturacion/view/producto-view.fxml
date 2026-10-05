@@ -119,7 +119,7 @@
 
                 <HBox spacing="10">
 
-                    <Button fx:id="btnNuevo"
+                    <Button
                             text="Nuevo"
                             onAction="#nuevo"
                             styleClass="button,button-secondary"/>

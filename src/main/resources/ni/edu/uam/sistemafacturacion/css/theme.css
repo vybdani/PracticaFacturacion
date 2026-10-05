@@ -57,9 +57,6 @@
     -fx-background-color: -fx-accent;
     -fx-background-radius: 11;
     -fx-alignment: CENTER;
-    -fx-text-fill: white;
-    -fx-font-weight: 800;
-    -fx-font-size: 14px;
 }
 
 .brand-title {
@@ -94,7 +91,6 @@
     -fx-alignment: CENTER_LEFT;
     -fx-graphic-text-gap: 12;
     -fx-padding: 10 12 10 12;
-    -fx-max-width: Infinity;
     -fx-cursor: hand;
 }
 
@@ -103,26 +99,8 @@
     -fx-text-fill: -fx-white;
 }
 
-.nav-item-active {
-    -fx-background-color: -fx-accent;
-    -fx-text-fill: -fx-white;
-}
-
-.nav-item-active:hover {
-    -fx-background-color: -fx-accent-hover;
-}
-
 .nav-item:disabled {
     -fx-opacity: 0.4;
-}
-
-.nav-item-danger {
-    -fx-text-fill: -fx-muted;
-}
-
-.nav-item-danger:hover {
-    -fx-background-color: -fx-ink-soft;
-    -fx-text-fill: -fx-white;
 }
 
 .sidebar-footer {
@@ -140,10 +118,6 @@
     -fx-text-fill: #A8927D;
     -fx-font-size: 10px;
     -fx-padding: 4 0 0 12;
-}
-
-.nav-icon {
-    -fx-font-size: 14px;
 }
 
 /* ================= CONTENIDO ================= */
@@ -185,12 +159,6 @@
     -fx-font-size: 13px;
 }
 
-.section-title {
-    -fx-font-size: 22px;
-    -fx-font-weight: 800;
-    -fx-text-fill: -fx-text;
-}
-
 .section-subtitle {
     -fx-font-size: 12.5px;
     -fx-text-fill: -fx-text-soft;
@@ -206,7 +174,7 @@
 }
 
 .hero-title {
-    -fx-text-fill: white;
+    -fx-text-fill: -fx-white;
     -fx-font-size: 19px;
     -fx-font-weight: 800;
 }
@@ -246,7 +214,6 @@
     -fx-background-color: -fx-accent-soft;
     -fx-background-radius: 12;
     -fx-alignment: CENTER;
-    -fx-font-size: 18px;
 }
 
 .dash-card-title {
@@ -299,7 +266,7 @@
 
 .button-primary {
     -fx-background-color: -fx-accent;
-    -fx-text-fill: white;
+    -fx-text-fill: -fx-white;
 }
 
 .button-primary:hover {
@@ -334,7 +301,7 @@
 
 /* ================= CAMPOS ================= */
 
-.text-field, .text-area, .combo-box, .check-box {
+.text-field, .combo-box, .check-box {
     -fx-font-size: 12.5px;
 }
 
@@ -426,7 +393,7 @@
     -fx-font-style: italic;
 }
 
-/* ================= VISTA SECUNDARIA (Categorías) ================= */
+/* ================= VENTANAS SECUNDARIAS (Categorías y Productos) ================= */
 
 .view-header {
     -fx-background-color: -fx-ink;

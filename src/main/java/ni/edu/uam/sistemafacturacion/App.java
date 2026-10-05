@@ -7,7 +7,11 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-public class App extends Application{
+public class App extends Application {
+
+    // Hoja de estilos usada por todas las ventanas
+    public static final String TEMA_CSS = "/ni/edu/uam/sistemafacturacion/css/theme.css";
+
     @Override
     public void start(Stage stage) throws IOException {
 
@@ -24,9 +28,7 @@ public class App extends Application{
         );
 
         scene.getStylesheets().add(
-                App.class.getResource(
-                        "/ni/edu/uam/sistemafacturacion/css/theme.css"
-                ).toExternalForm()
+                App.class.getResource(TEMA_CSS).toExternalForm()
         );
 
         stage.setTitle("Sistema de Facturación");
@@ -40,7 +42,6 @@ public class App extends Application{
     }
 
     public static void main(String[] args) {
-
         launch(args);
     }
 }
