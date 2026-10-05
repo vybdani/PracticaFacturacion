@@ -9,7 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProductoDao {
-    public List<Producto> listar() {
+    // Marca como activas las categorías con productos y como inactivas las vacías (solo las que cambian)
+    private static final String SQL_ESTADO_CATEGORIAS =
+            "UPDATE categorias c SET activa = EXISTS (SELECT 1 FROM productos p WHERE p.categoria_id = c.id) "
+                    + "WHERE c.activa <> EXISTS (SELECT 1 FROM productos p WHERE p.categoria_id = c.id)";
+
+    public List<Producto> listar() throws SQLException {
         List<Producto> productos = new ArrayList<>();
         String sql = "SELECT p.id, p.codigo, p.nombre, p.precio_venta, p.existencia, p.activo, "
                 + "c.id AS categoria_id, c.nombre AS categoria_nombre, c.activa AS categoria_activa "
@@ -23,7 +28,7 @@ public class ProductoDao {
         ) {
             while (resultSet.next()) {
 
-                // Si su categoría fue eliminada, el producto queda sin categoría (null)
+                // Productos registrados antes de la llave foránea RESTRICT pueden no tener categoría
                 Categoria categoria = null;
                 int categoriaId = resultSet.getInt("categoria_id");
                 if (!resultSet.wasNull()) {
@@ -43,45 +48,27 @@ public class ProductoDao {
                 producto.setActivo(resultSet.getBoolean("activo"));
                 productos.add(producto);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error al listar productos: " + e.getMessage(), e);
         }
         return productos;
     }
 
-    // Guarda el producto y le asigna el id generado por la base de datos
-    public void guardar(Producto producto) {
+    public void guardar(Producto producto) throws SQLException {
         String sql = "INSERT INTO productos(codigo, nombre, categoria_id, precio_venta, existencia, activo) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
-        try (
-                Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-        ) {
+        ejecutarYActualizarCategorias(sql, statement -> {
             statement.setString(1, producto.getCodigo());
             statement.setString(2, producto.getNombre());
             statement.setInt(3, producto.getCategoria().getId());
             statement.setBigDecimal(4, producto.getPrecioVenta());
             statement.setInt(5, producto.getExistencia());
             statement.setBoolean(6, producto.isActivo());
-            statement.executeUpdate();
-
-            try (ResultSet keys = statement.getGeneratedKeys()) {
-                if (keys.next()) {
-                    producto.setId(keys.getInt(1));
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error al guardar el producto: " + e.getMessage(), e);
-        }
+        });
     }
 
-    public void actualizar(Producto producto) {
+    public void actualizar(Producto producto) throws SQLException {
         String sql = "UPDATE productos SET codigo = ?, nombre = ?, categoria_id = ?, "
                 + "precio_venta = ?, existencia = ?, activo = ? WHERE id = ?";
-        try (
-                Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        ejecutarYActualizarCategorias(sql, statement -> {
             statement.setString(1, producto.getCodigo());
             statement.setString(2, producto.getNombre());
             statement.setInt(3, producto.getCategoria().getId());
@@ -89,38 +76,59 @@ public class ProductoDao {
             statement.setInt(5, producto.getExistencia());
             statement.setBoolean(6, producto.isActivo());
             statement.setInt(7, producto.getId());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Error al actualizar el producto: " + e.getMessage(), e);
-        }
+        });
     }
 
-    public int contarPorCategoria(int categoriaId) {
-        String sql = "SELECT COUNT(*) FROM productos WHERE categoria_id = ?";
-        try (
-                Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
-            statement.setInt(1, categoriaId);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                resultSet.next();
-                return resultSet.getInt(1);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error al contar los productos de la categoría: " + e.getMessage(), e);
-        }
-    }
-
-    public void eliminar(int id) {
+    public void eliminar(int id) throws SQLException {
         String sql = "DELETE FROM productos WHERE id = ?";
+        ejecutarYActualizarCategorias(sql, statement -> statement.setInt(1, id));
+    }
+
+    /*
+     * Una categoría está activa solo si tiene productos.
+     * Ejecuta el INSERT, UPDATE o DELETE del producto y, en la misma transacción,
+     * vuelve a calcular el estado de las categorías: si algo falla no se guarda ninguno de los dos.
+     */
+    private void ejecutarYActualizarCategorias(String sql, AsignarParametros parametros) throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try (
+                    PreparedStatement statement = connection.prepareStatement(sql);
+                    PreparedStatement estado = connection.prepareStatement(SQL_ESTADO_CATEGORIAS)
+            ) {
+                parametros.asignar(statement);
+                statement.executeUpdate();
+                estado.executeUpdate();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
+        }
+    }
+
+    @FunctionalInterface
+    private interface AsignarParametros {
+        void asignar(PreparedStatement statement) throws SQLException;
+    }
+
+    // Para registrar: busca el código en todos los productos
+    public boolean existeCodigo(String codigo) throws SQLException {
+        return existeCodigo(codigo, 0);
+    }
+
+    // Para actualizar: excluye el producto que se está modificando (los id empiezan en 1)
+    public boolean existeCodigo(String codigo, int idExcluir) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM productos WHERE LOWER(codigo) = LOWER(?) AND id <> ?";
         try (
                 Connection connection = DatabaseConnection.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)
         ) {
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Error al eliminar el producto: " + e.getMessage(), e);
+            statement.setString(1, codigo);
+            statement.setInt(2, idExcluir);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() && resultSet.getInt(1) > 0;
+            }
         }
     }
 }
