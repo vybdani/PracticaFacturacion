@@ -5,14 +5,18 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
+import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import ni.edu.uam.sistemafacturacion.model.Categoria;
 import ni.edu.uam.sistemafacturacion.service.CategoriaService;
-import ni.edu.uam.sistemafacturacion.service.ProductoService;
 import ni.edu.uam.sistemafacturacion.util.Alertas;
+import ni.edu.uam.sistemafacturacion.util.Sincronizacion;
+
+import java.sql.SQLException;
+import java.util.Map;
 
 public class CategoriaController {
     // CAMPOS DEL FORMULARIO
@@ -22,8 +26,9 @@ public class CategoriaController {
     @FXML
     private TextField txtNombre;
 
+    // Estado de solo lectura: la categoría está activa cuando tiene productos
     @FXML
-    private CheckBox chkActiva;
+    private Label lblEstado;
 
     // TABLA
     @FXML
@@ -38,6 +43,12 @@ public class CategoriaController {
     @FXML
     private TableColumn<Categoria, String> colActiva;
 
+    @FXML
+    private TableColumn<Categoria, Integer> colProductos;
+
+    // Productos por categoría (id de categoría -> cantidad), para la columna "Productos"
+    private Map<Integer, Integer> productosPorCategoria = Map.of();
+
     // BOTONES
     @FXML
     private Button btnGuardar;
@@ -51,24 +62,20 @@ public class CategoriaController {
     // SERVICE
     private CategoriaService categoriaService;
 
-    private ProductoService productoService;
-
-    // Categoría seleccionada en la tabla (la que se actualiza o elimina)
-    private Categoria categoriaSeleccionada;
-
     // INICIALIZACIÓN
     @FXML
     public void initialize() {
 
         categoriaService = new CategoriaService();
 
-        productoService = new ProductoService();
-
         configurarColumnas();
 
         configurarSeleccionTabla();
 
         cargarCategorias();
+
+        // Si en la ventana de Productos se agrega, cambia o elimina un producto, se actualiza la columna "Productos"
+        Sincronizacion.escucharProductos(tblCategorias, this::actualizarConteoYEstado);
 
         nuevo();
     }
@@ -82,6 +89,9 @@ public class CategoriaController {
         colNombre.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getNombre()));
 
         colActiva.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().isActiva() ? "Sí" : "No"));
+
+        colProductos.setCellValueFactory(cellData -> new SimpleIntegerProperty(
+                productosPorCategoria.getOrDefault(cellData.getValue().getId(), 0)).asObject());
     }
 
     // SELECCIONAR REGISTRO
@@ -101,11 +111,9 @@ public class CategoriaController {
 
     // MOSTRAR CATEGORIA
     private void mostrarCategoria(Categoria categoria) {
-        categoriaSeleccionada = categoria;
-
         txtId.setText(String.valueOf(categoria.getId()));
         txtNombre.setText(categoria.getNombre());
-        chkActiva.setSelected(categoria.isActiva());
+        lblEstado.setText(describirEstado(categoria));
 
         // Con una categoría seleccionada se puede actualizar o eliminar, no guardar
         btnGuardar.setDisable(true);
@@ -116,22 +124,41 @@ public class CategoriaController {
     // CARGAR CATEGORÍAS
     private void cargarCategorias() {
         try {
+            productosPorCategoria = categoriaService.contarProductosPorCategoria();
             tblCategorias.setItems(
                     FXCollections.observableArrayList(categoriaService.listar())
             );
-        } catch (Exception e) {
-            Alertas.error("Error al cargar las categorías", e.getMessage());
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible cargar las categorías.", e);
+        }
+    }
+
+    // Un cambio en Productos solo afecta el conteo y el estado (activa = tiene productos):
+    // se actualizan sin tocar la selección ni el nombre que se está escribiendo
+    private void actualizarConteoYEstado() {
+        try {
+            productosPorCategoria = categoriaService.contarProductosPorCategoria();
+
+            for (Categoria categoria : tblCategorias.getItems()) {
+                categoria.setActiva(productosPorCategoria.getOrDefault(categoria.getId(), 0) > 0);
+            }
+            tblCategorias.refresh();
+
+            Categoria seleccionada = tblCategorias.getSelectionModel().getSelectedItem();
+            if (seleccionada != null) {
+                lblEstado.setText(describirEstado(seleccionada));
+            }
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible actualizar la cantidad de productos.", e);
         }
     }
 
     // NUEVO
     @FXML
     private void nuevo() {
-        categoriaSeleccionada = null;
-
         txtId.clear();
         txtNombre.clear();
-        chkActiva.setSelected(true);
+        lblEstado.setText("Inactiva: se activará cuando tenga productos.");
         tblCategorias
                 .getSelectionModel()
                 .clearSelection();
@@ -142,124 +169,140 @@ public class CategoriaController {
         btnEliminar.setDisable(true);
     }
 
-    // GUARDAR
+    // GUARDAR (INSERT)
     @FXML
     private void guardar() {
-        if (!validarFormulario(null)) {
-            return;
-        }
-
-        Categoria categoria = new Categoria(null, txtNombre.getText().trim(), chkActiva.isSelected());
         try {
-            categoriaService.guardar(categoria);
-        } catch (Exception e) {
-            Alertas.error("No se pudo guardar la categoría", e.getMessage());
-            return;
-        }
+            Categoria categoria = obtenerCategoriaFormulario();
 
-        Alertas.informacion("Categoría guardada", "La categoría se registró correctamente.");
-        cargarCategorias();
-        nuevo();
+            if (categoriaService.existeNombre(categoria.getNombre())) {
+                Alertas.advertencia("Categoría duplicada", "Ya existe una categoría con ese nombre.");
+                txtNombre.requestFocus();
+                return;
+            }
+
+            categoriaService.guardar(categoria);
+
+            Alertas.informacion("Categoría registrada", "La categoría se guardó correctamente.");
+            cargarCategorias();
+            Sincronizacion.categoriasCambiaron();
+            nuevo();
+
+        } catch (IllegalArgumentException e) {
+            Alertas.advertencia("Validación", e.getMessage());
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible registrar la categoría.", e);
+        }
     }
 
-    // ACTUALIZAR
+    // ACTUALIZAR (UPDATE)
     @FXML
     private void actualizar() {
-        if (categoriaSeleccionada == null) {
-            Alertas.advertencia("Seleccione una categoría", "Debe seleccionar una categoría de la tabla.");
+        Categoria seleccionada = tblCategorias.getSelectionModel().getSelectedItem();
+
+        if (seleccionada == null) {
+            Alertas.advertencia("Seleccione una categoría", "Debe seleccionar la categoría que desea actualizar.");
             return;
         }
 
-        if (!validarFormulario(categoriaSeleccionada)) {
-            return;
-        }
-
-        if (!Alertas.confirmar("Actualizar categoría", "¿Desea actualizar esta categoría?")) {
-            return;
-        }
-
-        Categoria categoria = new Categoria(
-                categoriaSeleccionada.getId(), txtNombre.getText().trim(), chkActiva.isSelected());
         try {
-            categoriaService.actualizar(categoria);
-        } catch (Exception e) {
-            Alertas.error("No se pudo actualizar la categoría", e.getMessage());
-            return;
-        }
+            // Se validan otra vez los datos y se conserva el id: el UPDATE nunca crea un registro nuevo
+            Categoria categoria = obtenerCategoriaFormulario();
+            categoria.setId(seleccionada.getId());
 
-        Alertas.informacion("Categoría actualizada", "La categoría se actualizó correctamente.");
-        cargarCategorias();
-        nuevo();
+            if (categoriaService.existeNombre(categoria.getNombre(), categoria.getId())) {
+                Alertas.advertencia("Categoría duplicada", "Ya existe otra categoría con ese nombre.");
+                txtNombre.requestFocus();
+                return;
+            }
+
+            if (!Alertas.confirmar("Actualizar categoría", "¿Desea actualizar esta categoría?")) {
+                return;
+            }
+
+            categoriaService.actualizar(categoria);
+
+            Alertas.informacion("Categoría actualizada", "La categoría se actualizó correctamente.");
+            cargarCategorias();
+            Sincronizacion.categoriasCambiaron();
+            nuevo();
+
+        } catch (IllegalArgumentException e) {
+            Alertas.advertencia("Validación", e.getMessage());
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible actualizar la categoría.", e);
+        }
     }
 
-    // ELIMINAR
+    // ELIMINAR (DELETE)
     @FXML
     private void eliminar() {
-        if (categoriaSeleccionada == null) {
-            Alertas.advertencia("Seleccione una categoría", "Debe seleccionar una categoría de la tabla.");
-            return;
-        }
+        Categoria seleccionada = tblCategorias.getSelectionModel().getSelectedItem();
 
-        // Avisar si hay productos que quedarán sin categoría
-        String mensaje = "¿Está seguro de eliminar la categoría \"" + categoriaSeleccionada.getNombre() + "\"?";
-        int cantidad = contarProductosAsignados(categoriaSeleccionada.getId());
-        if (cantidad > 0) {
-            mensaje += "\n\nTiene " + cantidad + (cantidad == 1 ? " producto asignado, que quedará" : " productos asignados, que quedarán")
-                    + " como \"Sin categoría\". Podrá asignarles otra categoría desde Productos.";
-        }
-
-        if (!Alertas.confirmar("Eliminar categoría", mensaje)) {
+        if (seleccionada == null) {
+            Alertas.advertencia("Seleccione una categoría", "Debe seleccionar la categoría que desea eliminar.");
             return;
         }
 
         try {
-            categoriaService.eliminar(categoriaSeleccionada.getId());
-        } catch (Exception e) {
-            Alertas.error("No se pudo eliminar la categoría", e.getMessage());
-            return;
-        }
+            // Integridad referencial: no se elimina una categoría que usan los productos
+            if (categoriaService.tieneProductos(seleccionada.getId())) {
+                Alertas.advertencia(
+                        "Categoría en uso",
+                        "No puede eliminar la categoría porque tiene productos asociados."
+                );
+                return;
+            }
 
-        Alertas.informacion("Categoría eliminada", "La categoría se eliminó correctamente.");
-        cargarCategorias();
-        nuevo();
+            if (!Alertas.confirmar(
+                    "Eliminar categoría",
+                    "¿Está seguro de eliminar la categoría \"" + seleccionada.getNombre() + "\"?"
+            )) {
+                return;
+            }
+
+            categoriaService.eliminar(seleccionada.getId());
+
+            Alertas.informacion("Categoría eliminada", "La categoría se eliminó correctamente.");
+            cargarCategorias();
+            Sincronizacion.categoriasCambiaron();
+            nuevo();
+
+        } catch (SQLException e) {
+            Alertas.errorBaseDatos("No fue posible eliminar la categoría.", e);
+        }
     }
 
-    // Si no se puede contar, se toma como 0 y se muestra la confirmación normal
-    private int contarProductosAsignados(int categoriaId) {
-        try {
-            return productoService.contarPorCategoria(categoriaId);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    // VALIDAR FORMULARIO
-    // "editando" es la categoría que se está actualizando (para no marcar su propio nombre como duplicado).
-    private boolean validarFormulario(Categoria editando) {
+    // LEER Y VALIDAR FORMULARIO
+    // Devuelve la categoría con los datos del formulario o lanza IllegalArgumentException si hay errores.
+    private Categoria obtenerCategoriaFormulario() {
+        // trim(): un nombre con solo espacios queda vacío
         String nombre = txtNombre.getText().trim();
+
         if (nombre.isEmpty()) {
-            Alertas.advertencia("Campo requerido", "Debe ingresar el nombre de la categoría.");
-            txtNombre.requestFocus();
-            return false;
+            throw invalido(txtNombre, "El nombre de la categoría es obligatorio.");
         }
 
         if (nombre.length() > 100) {
-            Alertas.advertencia("Nombre demasiado largo", "El nombre no puede superar los 100 caracteres.");
-            txtNombre.requestFocus();
-            return false;
+            throw invalido(txtNombre, "El nombre no puede superar los 100 caracteres.");
         }
 
-        if (existeNombre(nombre, editando)) {
-            Alertas.advertencia("Categoría duplicada", "Ya existe una categoría con el nombre \"" + nombre + "\".");
-            txtNombre.requestFocus();
-            return false;
-        }
-        return true;
+        // "activa" no se captura en el formulario: lo decide la base según los productos
+        return new Categoria(null, nombre, false);
     }
 
-    // Verifica si otra categoría ya usa el nombre (sin distinguir mayúsculas/minúsculas)
-    private boolean existeNombre(String nombre, Categoria excluir) {
-        return tblCategorias.getItems().stream()
-                .anyMatch(c -> c != excluir && c.getNombre().equalsIgnoreCase(nombre));
+    // Texto del estado según la cantidad de productos de la categoría
+    private String describirEstado(Categoria categoria) {
+        int cantidad = productosPorCategoria.getOrDefault(categoria.getId(), 0);
+        if (cantidad == 0) {
+            return "Inactiva: no tiene productos.";
+        }
+        return "Activa: tiene " + cantidad + (cantidad == 1 ? " producto." : " productos.");
+    }
+
+    // Lleva el cursor al campo con error y crea la excepción con el mensaje
+    private IllegalArgumentException invalido(Control campo, String mensaje) {
+        campo.requestFocus();
+        return new IllegalArgumentException(mensaje);
     }
 }

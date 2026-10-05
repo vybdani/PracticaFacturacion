@@ -4,17 +4,21 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ni.edu.uam.sistemafacturacion.App;
 import ni.edu.uam.sistemafacturacion.util.Alertas;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainController {
 
     @FXML
     private Button btnSalir;
+
+    // Ventanas secundarias abiertas, por ruta FXML (evita abrir la misma dos veces)
+    private final Map<String, Stage> ventanasAbiertas = new HashMap<>();
 
 
     /**
@@ -48,14 +52,21 @@ public class MainController {
 
 
     /**
-     * Abre una vista FXML en una ventana modal
-     * que depende de la ventana principal.
+     * Abre una vista FXML en una ventana que depende de la principal.
+     * Categorías y Productos pueden estar abiertas a la vez;
+     * si la ventana ya está abierta, solo se trae al frente.
      */
     private void abrirVentana(
             String rutaFxml,
             String titulo,
             double ancho,
             double alto) {
+
+        Stage abierta = ventanasAbiertas.get(rutaFxml);
+        if (abierta != null) {
+            abierta.toFront();
+            return;
+        }
 
         try {
 
@@ -83,20 +94,15 @@ public class MainController {
             stage.setMinHeight(500);
 
             /*
-             * Impide trabajar con la ventana principal
-             * mientras la ventana secundaria esté abierta.
-             */
-            stage.initModality(
-                    Modality.WINDOW_MODAL
-            );
-
-            /*
              * Hace que la nueva ventana dependa
-             * de la ventana principal.
+             * de la ventana principal (se cierra con ella).
              */
             stage.initOwner(ventanaPrincipal());
 
-            stage.showAndWait();
+            ventanasAbiertas.put(rutaFxml, stage);
+            stage.setOnHidden(evento -> ventanasAbiertas.remove(rutaFxml));
+
+            stage.show();
 
         } catch (IOException e) {
 
