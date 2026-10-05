@@ -10,26 +10,27 @@
 CREATE TABLE IF NOT EXISTS categorias (
     id     SERIAL       PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE,
-    activa BOOLEAN      NOT NULL DEFAULT TRUE
+    -- Activa solo cuando tiene productos (la aplicación la recalcula al guardar productos)
+    activa BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS productos (
     id           SERIAL        PRIMARY KEY,
     codigo       VARCHAR(30)   NOT NULL UNIQUE,
     nombre       VARCHAR(150)  NOT NULL,
-    -- Al eliminar una categoría, sus productos quedan sin categoría (NULL)
-    categoria_id INTEGER       REFERENCES categorias(id) ON DELETE SET NULL,
+    -- No se puede eliminar una categoría que tenga productos (integridad referencial)
+    categoria_id INTEGER       REFERENCES categorias(id) ON DELETE RESTRICT,
     precio_venta NUMERIC(12,2) NOT NULL CHECK (precio_venta > 0),
     existencia   INTEGER       NOT NULL CHECK (existencia >= 0),
     activo       BOOLEAN       NOT NULL DEFAULT TRUE
 );
 
--- Datos de ejemplo (solo si la tabla está vacía)
+-- Datos de ejemplo (solo si la tabla está vacía). Sin productos, nacen inactivas.
 INSERT INTO categorias (nombre, activa)
 SELECT v.nombre, v.activa
 FROM (VALUES
-          ('Electrónica', TRUE),
-          ('Papelería',   TRUE),
-          ('Alimentos',   TRUE)
+          ('Electrónica', FALSE),
+          ('Papelería',   FALSE),
+          ('Alimentos',   FALSE)
      ) AS v(nombre, activa)
 WHERE NOT EXISTS (SELECT 1 FROM categorias);
